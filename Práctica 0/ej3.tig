@@ -1,0 +1,15 @@
+let
+        function dprint (n : int) =
+            if n>=10 then (  dprint (n / 10) ; (print (chr(48+n-(n/10)*10))) ) else print( chr(48+n) )
+        type tree = { key:int, children:treelist }
+        type treelist = { hd:tree, tl:treelist }
+        
+        function length (l : treelist) : int = if l=nil then 0 else 1+length(l.tl)
+        function areBin(l : treelist) : int = let var t = l.hd 
+                                         in length(l)<=2 & areBin(t.children) /*& areBin(l.tl)*/ end
+        function isBin (t : tree) : int = areBin(treelist{hd=t,tl=nil})
+
+in
+        0
+end
+

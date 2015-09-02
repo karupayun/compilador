@@ -1,0 +1,35 @@
+let
+        function dprint (n : int) =
+            if n>=10 then (  dprint (n / 10) ; (print (chr(48+n-(n/10)*10))) ) else print( chr(48+n) )
+            
+        type lista = {item : int , resto : lista}
+        
+        
+        function cons (n : int, l : lista) : lista = lista {item = n, resto = l}
+        function length (l : lista) : int = if l=nil then 0 else 1+length(l.resto)
+        function conqui (l1 : lista, l2 : lista) : lista = if l1=nil then l2 else lista{item = l1.item, resto = conqui (l1.resto,l2)}
+        function snoc (n : int, l : lista) : lista = if l=nil then lista{item=n, resto=nil} else lista{item=l.item, resto=snoc(n,l.resto)}
+        function filtra (n : int, l : lista) : lista = if l=nil then nil else if n <> l.item then lista{item=l.item, resto=filtra(n,l.resto)} else filtra(n,l.resto)             
+        function isin (n:int, l:lista) : int = length(filtra(n,l))<>length(l)
+        function remove (n:int, l:lista) : lista = if l=nil then nil else if n <> l.item then lista{item=l.item, resto=remove(n,l.resto)} else l.resto
+        function removeall (n : int, l : lista) : lista = filtra (n,l)
+        function reverse (l  : lista) : lista = if l=nil then nil else snoc(l.item, reverse(l.resto))
+        function reverse2(l : lista) : lista = let
+                function reverseaux(l1:lista , l2:lista) : lista = if l1=nil then l2 else reverseaux(l1.resto,cons(l1.item,l2))
+            in
+                reverseaux(l,nil)
+            end
+        
+        function printlist(l : lista) = if l<>nil then ( dprint(l.item) ; printlist(l.resto) )
+        
+
+        /*var test1 := lista{item=22 , resto=nil}
+        var test2 := lista{item=33 , resto=test1} */
+
+in
+        0
+end
+
+
+
+
