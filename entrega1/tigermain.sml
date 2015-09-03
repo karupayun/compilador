@@ -1,7 +1,8 @@
 open tigerlex
 open tigergrm
 open tigerescap
-open tigerseman
+(*open tigerseman Descomentar cuando funcione tigerseman (y transProg) xD*)
+open ej4
 open BasicIO Nonstdio
 
 fun lexstream(is: instream) =
@@ -30,8 +31,9 @@ fun main(args) =
 		val _ = findEscape(expr)
 		val _ = if arbol then tigerpp.exprAst expr else ()
 	in
-		transProg(expr);
-		print "yes!!\n"
+		(*transProg(expr);*)
+		print "yes!!\n";
+        print (Int.toString(ej4.maxargs expr) ^ "\n")
 	end	handle Fail s => print("Fail: "^s^"\n")
 
 val _ = main(CommandLine.arguments())

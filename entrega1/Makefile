@@ -1,15 +1,31 @@
 # Unix makefile for tigermain example
 
+LUGAR = Facultad
+
+ifeq ($(LUGAR),Facultad)
+# Facultad
 HOME=/home/alumno
 MOSMLHOME=${HOME}/mosml
-MOSMLTOOLS=camlrunm $(MOSMLHOME)/tools
+MOSMLBIN=$(MOSMLHOME)/bin
+MOSMLTOOLS=$(MOSMLBIN)/camlrunm $(MOSMLHOME)/tools
+MOSMLLEX=$(MOSMLBIN)/mosmllex
+MOSMLYACC=$(MOSMLBIN)/mosmlyac -v
+MOSMLC=$(MOSMLBIN)/mosmlc -c -liberal
+MOSMLL=$(MOSMLBIN)/mosmlc
+endif
+
+ifeq ($(LUGAR),Mariano)
+# Mariano
+MOSMLTOOLS=camlrunm /usr/share/mosml/tools
 MOSMLLEX=mosmllex
 MOSMLYACC=mosmlyac -v
+MOSMLC=mosmlc -c -liberal
+MOSMLL=mosmlc
+endif
 
 GCC=gcc
 CFLAGS= -g
-MOSMLC=${MOSMLHOME}/bin/mosmlc -c -liberal
-MOSMLL=${MOSMLHOME}/bin/mosmlc
+
 
 # Unix
 REMOVE=rm -f
@@ -25,7 +41,8 @@ EXEFILE=
 .SUFFIXES : .sig .sml .ui .uo
 
 GRALOBJS= tigerabs.uo tigergrm.uo tigerlex.uo tigermain.uo \
-	tigernlin.uo tigerpp.uo tigerescap.uo tigertab.uo tigerseman.uo tigertemp.uo topsort.uo
+	tigernlin.uo tigerpp.uo tigerescap.uo tigertab.uo tigertemp.uo topsort.uo \
+	ej4.uo tigertips.uo
 
 all: tiger
 
@@ -64,16 +81,17 @@ depend: tigerabs.sml tigergrm.sml tigerlex.sml tigermain.sml \
 	$(MOSMLTOOLS)/mosmldep >> Makefile
 
 ### DO NOT DELETE THIS LINE
-tigerpp.uo: tigerabs.uo 
+tigerpp.uo: tigertips.uo tigerabs.uo 
+tigertemp.uo: tigertemp.ui 
+tigertab.uo: tigertab.ui 
+tigersres.uo: tigertab.ui tigertips.uo tigertemp.ui tigerabs.uo 
+tigerlex.uo: tigergrm.ui tigernlin.uo 
+tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigerabs.uo 
+ej4.uo: tigerabs.uo 
 tigerescap.ui: tigerabs.uo 
 tigergrm.ui: tigerabs.uo 
-tigerseman.ui: tigerabs.uo 
-tigerescap.uo: tigerescap.ui tigertab.ui tigerabs.uo 
-tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigerabs.uo 
 tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
-tigersres.uo: tigertab.ui tigertips.uo tigertemp.ui tigerabs.uo 
-tigertab.uo: tigertab.ui 
-tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigerlex.uo \
-    tigerpp.uo 
-tigertemp.uo: tigertemp.ui 
-tigerlex.uo: tigergrm.ui tigernlin.uo 
+tigerescap.uo: tigerescap.ui tigertab.ui tigerabs.uo 
+tigermain.uo: tigerescap.ui ej4.uo tigergrm.ui tigerlex.uo tigerpp.uo 
+ej7.uo: tigertips.uo 
+tigerseman.ui: tigerabs.uo 

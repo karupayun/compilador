@@ -4,11 +4,11 @@ struct
 type unique = unit ref
 datatype Tipo = TUnit
 	| TNil
-	| TInt
+	| TInt of read
 	| TString
 	| TArray of Tipo * unique
 	| TRecord of (string * Tipo * int) list * unique
-	| TFunc of Tipo list * Tipo
 	| TTipo of string * Tipo option ref
+and read = RO | RW
 
 end

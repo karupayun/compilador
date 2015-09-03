@@ -67,7 +67,7 @@ fun transExp(venv, tenv) =
 		fun trexp(VarExp v) = trvar(v)
 		| trexp(UnitExp _) = {exp=(), ty=TUnit}
 		| trexp(NilExp _)= {exp=(), ty=TNil}
-		| trexp(IntExp(i, _)) = {exp=(), ty=TInt}
+		| trexp(IntExp(i, _)) = {exp=(), ty=TInt RW}
 		| trexp(StringExp(s, _)) = {exp=(), ty=TString}
 		| trexp(CallExp({func, args}, nl)) =
 			{exp=(), ty=TUnit} (*COMPLETAR*)
@@ -197,4 +197,5 @@ fun transProg ex =
 						body=UnitExp 0}, 0)
 		val _ = transExp(tab_vars, tab_tipos) main
 	in	print "bien!\n" end
+	
 end
