@@ -154,7 +154,7 @@ fun cmptipo (t1,t2,nl) =
 	| 	(t as (TRecord (_,u1), TRecord (_,u2))) => if u1=u2 then t else error ("tipos en records",nl)
 	| 	(t as (TRecord _), TNil) => t
 	| 	(TNil, t as (TRecord _)) => t
-	|	_ => error ("error genérico", nl)
+	|	_ => error ("Tipos no iguales", nl)
 	
 
 		| trexp(BreakExp nl) = {exp=SCAF, ty=TUnit} (*COMPLETAR*)	

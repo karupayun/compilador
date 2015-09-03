@@ -2,6 +2,7 @@
 structure tigerpp :> tigerpp = 
 struct
 *)
+open tigertab
 open tigertips
 open tigerabs
 open PP
