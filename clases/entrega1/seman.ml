@@ -157,7 +157,7 @@ fun cmptipo (t1,t2,nl) =
 	|	_ => error ("Tipos no iguales", nl)
 	
 
-		| trexp(BreakExp nl) = {exp=SCAF, ty=TUnit} (*COMPLETAR*)	
+		|	
 		| trexp(ForExp({var, escape, lo, hi, body}, nl)) =
 			let val {ty = tyhi, exp} = trexp hi
 			    val {ty = tylo, exp} = trexp lo

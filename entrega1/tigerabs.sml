@@ -29,7 +29,7 @@ and exp = VarExp of var * pos                                           (* varia
 	| WhileExp of {test: exp, body: exp} * pos
 	| ForExp of {var: symbol, escape: bool ref,
 		     lo: exp, hi: exp, body: exp} * pos
-(* for a:=10 to 20 do ... var=a lo=10 hi=10 body=... 
+(* for a:=10 to 20 do ... var=a lo=10 hi=20 body= ... 
    escape es referencia para completar a posteriori. Se hace un AST donde las referencias quedan vacías y en la etapa de escape se completa
    escape -> indica si es una variable escapada *)
 	| LetExp of {decs: dec list, body: exp} * pos
@@ -37,6 +37,7 @@ and exp = VarExp of var * pos                                           (* varia
       decs
    in
       body
+   end
 *)
 	| BreakExp of pos
 	| ArrayExp of {typ: symbol, size: exp, init: exp} * pos
