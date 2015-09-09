@@ -4,7 +4,6 @@ struct
 open tigerabs
 open tigersres
 
-type SCAF = unit
 type expty = {exp: unit, ty: Tipo}
 
 type venv = (string, EnvEntry) tigertab.Tabla
@@ -41,17 +40,8 @@ val tab_vars : (string, EnvEntry) Tabla = tabInserList(
 fun tipoReal (TTipo (s, ref (SOME (t)))) = tipoReal t
   | tipoReal t = t
 
-fun cmptipo (t1,t2,nl) = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
-	case (t1,t2) of
-		(TInt _, TInt _) => TInt RW
-	|	(TString, TString) => TString
-	| 	(t as (TArray (_,u1)), TArray (_,u2)) => if u1=u2 then t else (error ("tipos en arreglos",nl))
-	| 	(t as (TRecord (_,u1)), TRecord (_,u2)) => if u1=u2 then t else (error ("tipos en records",nl))
-	| 	(t as (TRecord _), TNil) => t
-	| 	(TNil, t as (TRecord _)) => t
-	|	_ => error ("Tipos no iguales", nl)
-
-fun tiposIguales (TRecord _) TNil = true
+fun tiposIguales (TInt _) (TInt _) = true
+  | tiposIguales (TRecord _) TNil = true
   | tiposIguales TNil (TRecord _) = true 
   | tiposIguales (TRecord (_, u1)) (TRecord (_, u2 )) = (u1=u2)
   | tiposIguales (TArray (_, u1)) (TArray (_, u2)) = (u1=u2)
@@ -75,6 +65,13 @@ fun tiposIguales (TRecord _) TNil = true
 
 fun transExp(venv, tenv) =
 	let fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
+		fun cmptipo (t1,t2,nl) = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
+			case (tiposIguales t1 t2) of
+					false => error ("Tipos no comparables", nl)
+				|	true => (case t1 of 
+								(TInt _) => (TInt RW)
+							|	TNil	 => t2
+							|	_		 => t1)	
 		fun trexp(VarExp v) = trvar(v)
 		| trexp(UnitExp _) = {exp=(), ty=TUnit}
 		| trexp(NilExp _)= {exp=(), ty=TNil}
@@ -83,14 +80,14 @@ fun transExp(venv, tenv) =
 		| trexp(CallExp ({func,args},nl)) =
 			let val (targs, tresult) = 
 				case tabBusca (func, venv) of
-					SOME (FunEntry {formals, result}) => (formals, result)
+					SOME (Func {formals, result, ...}) => (formals, result)
 				|	_ => error (func^" no es una función", nl)
 				val lteargs = List.map trexp args
 				val ltargs = List.map (#ty) lteargs
-			 	val _ = (List.map (fn (x,y) => cmptipo (x,y,nl)) (Listpair.zip (ltargs,targs))) (* Pablo: No me convence la función cmptipo, pero pasa *)
-							handle Empty => error ("nro incorrecto de argumentos", nl) (* horrible con handle *)
+			 	val _ = (List.map (fn (x,y) => cmptipo (x,y,nl)) (ListPair.zip (ltargs,targs))) (* Pablo: No me convence la función cmptipo, pero pasa *)
+							handle Empty => error ("Número incorrecto de argumentos", nl) (* horrible con handle *)
 			in
-				{ty = tresult, exp = SCAF}
+				{ty = tresult, exp = ()}
 			end
 		| trexp(OpExp({left, oper=EqOp, right}, nl)) =
 			let
@@ -164,14 +161,14 @@ fun transExp(venv, tenv) =
 			    val {exp=thenexp, ty=tythen} = trexp then'
 			    val {exp=elseexp, ty=tyelse} = trexp else'
 			in
-				if tipoReal tytest=TInt RW andalso tiposIguales tythen tyelse then {exp=(), ty=tythen}
+				if tipoReal tytest=TInt RW andalso tiposIguales tythen tyelse then {exp=(), ty=cmptipo (tythen, tyelse,nl)} (* PROB: el tytest puede ser TInt RO *) 
 				else error("Error de tipos en if" ,nl)
 			end
 		| trexp(IfExp({test, then', else'=NONE}, nl)) =
 			let val {exp=exptest,ty=tytest} = trexp test
 			    val {exp=expthen,ty=tythen} = trexp then'
 			in
-				if tipoReal tytest=TInt RW andalso tythen=TUnit then {exp=(), ty=TUnit}
+				if tipoReal tytest=TInt RW andalso tythen=TUnit then {exp=(), ty=TUnit} (* PROB: el tytest puede ser TInt RO *) 
 				else error("Error de tipos en if", nl)
 			end
 		| trexp(WhileExp({test, body}, nl)) =
@@ -184,14 +181,19 @@ fun transExp(venv, tenv) =
 				else error("El cuerpo de un while no puede devolver un valor", nl)
 			end
 		| trexp(ForExp({var, escape, lo, hi, body}, nl)) =
-			{exp=(), ty=TUnit} (*COMPLETAR*)
-		| trexp(LetExp({decs, body}, _)) =
-			let
-				val (venv', tenv', _) = List.foldl (fn (d, (v, t, _)) => trdec(v, t) d) (venv, tenv, []) decs
-				val {exp=expbody,ty=tybody}=transExp (venv', tenv') body
-			in 
-				{exp=(), ty=tybody}
+			let val {ty = tyhi, exp} = trexp hi
+			    val {ty = tylo, exp} = trexp lo
+			    val _ = if tiposIguales tyhi (TInt RW) andalso tiposIguales tylo (TInt RW) 
+						then ()
+						else error ("Los límites del for deben ser expresiones enteras", nl)
+				val venv' = tabInserta (var, Var {ty = TInt RO}, fromTab venv) (* Pablo: No entender esta línea *)
+				val {ty = tybody, exp} = trexp (body) (* transExp (body, tenv, venv') *)
+				val _ = if tybody <> TUnit then error ("El cuerpo del for debe ser de tipo unit", nl) else ()
+			in
+				{ty = TUnit, exp = ()}
 			end
+		| trexp(LetExp({decs, body}, _)) = 
+			{exp=(), ty=TUnit} (*COMPLETAR*)
 		| trexp(BreakExp nl) =
 			{exp=(), ty=TUnit} (*COMPLETAR*)
 		| trexp(ArrayExp({typ, size, init}, nl)) =
