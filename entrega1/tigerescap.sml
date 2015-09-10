@@ -24,9 +24,9 @@ and travExp env d s =
 		(travExp env d left; travExp env d right)
 	| RecordExp({fields, typ}, _) =>
 		List.app ((travExp env d) o #2) fields
-	| SeqExp(le, nl) =>
-		(List.foldl (fn (e, (v, d)) => (travExp v d e; (v, d)))
-			(env, d) le; ())
+	| SeqExp(le, _) => List.app (travExp env d) le
+		(* (List.foldl (fn (e, (v, d)) => (travExp v d e; (v, d)))  (* codigo viejo *)
+			(env, d) le; ()) *)
 	| AssignExp({var, exp}, _) =>
 		(travVar env d var; travExp env d exp)
 	| IfExp({test, then', else'=NONE}, _) =>
@@ -43,19 +43,19 @@ and travExp env d s =
 		end
 	| LetExp({decs, body}, _) =>
 		travExp (travDecs env d decs) d body
-	| ArrayExp({typ, size, init}, _) => travExp env d init
+	| ArrayExp({typ, size, init}, _) => (travExp env d init ; travExp env d size) (* no falta aplicarlo a size?  lo modifique para que sea asi*)
 	| _ => ()
 and travDecs env d [] = env
 | travDecs env d (s::t) =
 	let	fun aux s =
 			case s of
 			FunctionDec l =>
-				let	fun aux(({name, params, result, body}, _), env) =
+				let	fun aux ({name, params, result, body}, _) =
 					let	fun aux1(x, e) =
 							tabRInserta(#name(x), (d+1, #escape(x)), e)
 						val env' = foldr aux1 env params
-					in travExp env' (d+1) body; env end
-				in	foldl aux env l end
+					in travExp env' (d+1) body end
+				in	List.app aux l ; env end (*aca tambien saque un fold y puse un app *)
 			| VarDec({name, escape, typ, init}, _) =>
 				(travExp env d init; tabRInserta(name, (d, escape), env))
 			| TypeDec _ => env

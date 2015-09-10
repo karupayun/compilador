@@ -212,11 +212,29 @@ fun transExp(venv, tenv) =
 		| trexp(ArrayExp({typ, size, init}, nl)) =
 			{exp=(), ty=TUnit} (*COMPLETAR*)
 		and trvar(SimpleVar s, nl) =
-			{exp=(), ty=TUnit} (*COMPLETAR*)
+            case tabBusca venv s of
+                SOME t => {exp=(), ty=t}
+                NONE => error("Variable"^s^"no definida",nl)
 		| trvar(FieldVar(v, s), nl) =
-			{exp=(), ty=TUnit} (*COMPLETAR*)
+            let 
+                val {expv, tyv} = trvar(v,nl)
+                val t = case tyv of
+                            TRecord (l,_) => case List.filter (fun x => x.1 = s ) l of
+                                                [] => error("Record no tiene campo"^s,nl)
+                                                e:l' => e.2
+                            _ => error("No se puede indexar porque no es Record",nl)
+                in {exp=(), ty=t}
 		| trvar(SubscriptVar(v, e), nl) =
-			{exp=(), ty=TUnit} (*COMPLETAR*)
+            let
+                val {expe, te} = trexp e
+                val {expv, tv} = trvar v
+                val _ = case te of
+                        TInt _ => ()
+                        _ => error("Indice debe ser entero",nl)
+                val t = case tv of
+                            TArray (t,_) => 
+                            _ => error("Indexando algo que no es un arreglo", nl)
+                in {exp=(), ty=t}
 		and trdec (venv, tenv) (VarDec ({name,escape,typ=NONE,init},pos)) = 
 			(venv, tenv, []) (*COMPLETAR*)
 		| trdec (venv,tenv) (VarDec ({name,escape,typ=SOME s,init},pos)) =
