@@ -42,25 +42,24 @@ fun tiposIguales (TInt _) (TInt _) = true
   | tiposIguales TNil (TRecord _) = true 
   | tiposIguales (TRecord (_, u1)) (TRecord (_, u2 )) = (u1=u2)
   | tiposIguales (TArray (_, u1)) (TArray (_, u2)) = (u1=u2)
-  | tiposIguales (TTipo _) _ = raise Fail "No debería pasar! (1)"
-  | tiposIguales _ (TTipo _) = raise Fail "No debería pasar! (1)"
+  | tiposIguales (TTipo _) b =
+		(* let *)
+		(* 	val a = case !r of *)
+		(* 		SOME t => t *)
+		(* 		| NONE => raise Fail "No debería pasar! (1)" *)
+		(* in *)
+		(* 	tiposIguales a b *)
+		(* end *)raise Fail "No debería pasar! (1)"
+  | tiposIguales a (TTipo _) =
+		(* let *)
+		(* 	val b = case !r of *)
+		(* 		SOME t => t *)
+		(* 		| NONE => raise Fail "No debería pasar! (2)" *)
+		(* in *)
+		(* 	tiposIguales a b *)
+		(* end *)raise Fail "No debería pasar! (1)"
   | tiposIguales a b = (a=b)
-(*  | tiposIguales (TTipo (_, r)) b =
-		let
-			val a = case !r of
-				SOME t => t
-				| NONE => raise Fail "No debería pasar! (1)"
-		in
-			tiposIguales a b
-		end
-  | tiposIguales a (TTipo (_, r)) =
-		let
-			val b = case !r of
-				SOME t => t
-				| NONE => raise Fail "No debería pasar! (2)"
-		in
-			tiposIguales a b
-		end*)
+
 fun transExp(venv, tenv) =
 	let fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
 		fun cmptipo t1 t2 nl = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
