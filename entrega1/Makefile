@@ -1,6 +1,6 @@
 # Unix makefile for tigermain example
 
-LUGAR = Mariano
+LUGAR = Facultad
 
 ifeq ($(LUGAR),Facultad)
 # Facultad
@@ -81,21 +81,21 @@ depend: tigerabs.sml tigergrm.sml tigerlex.sml tigermain.sml \
 	$(MOSMLTOOLS)/mosmldep >> Makefile
 
 ### DO NOT DELETE THIS LINE
+tigerpp.uo: tigertab.ui tigertips.uo tigerabs.uo 
+tigermuestratipos.ui: tigertips.uo 
 tigertemp.uo: tigertemp.ui 
+tigertab.uo: tigertab.ui 
+tigersres.uo: tigertab.ui tigertips.uo tigertemp.ui tigerabs.uo 
+tigerlex.uo: tigergrm.ui tigernlin.uo 
 tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigerabs.uo 
 tigermuestratipos.uo: tigermuestratipos.ui tigertips.uo 
-tigerlex.uo: tigergrm.ui tigernlin.uo 
-tigerseman.ui: tigerabs.uo 
-tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigerlex.uo \
-    tigerpp.uo 
-tigerescap.uo: tigerescap.ui tigertab.ui tigerabs.uo 
-tigersres.uo: tigertab.ui tigertips.uo tigertemp.ui tigerabs.uo 
-tigertab.uo: tigertab.ui 
-tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
-tigermuestratipos.ui: tigertips.uo 
 tigerescap.ui: tigerabs.uo 
 tigergrm.ui: tigerabs.uo 
+tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
+tigerescap.uo: tigerescap.ui tigertab.ui tigerabs.uo 
+tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo 
+tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigerlex.uo \
+    tigerpp.uo 
+tigerseman.ui: tigerabs.uo 
 tigertopsort.uo: tigertopsort.ui tigertab.ui tigertips.uo tigerabs.uo \
     tigermuestratipos.ui 
-tigerpp.uo: tigertab.ui tigertips.uo tigerabs.uo 
-tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo 
