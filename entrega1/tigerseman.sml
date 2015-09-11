@@ -60,9 +60,9 @@ fun tiposIguales (TInt _) (TInt _) = true
 		(* end *)raise Fail "No debería pasar! (1)"
   | tiposIguales a b = (a=b)
 
+fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
 fun transExp(venv, tenv) =
-	let fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
-		fun cmptipo t1 t2 nl = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
+	let fun cmptipo t1 t2 nl = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
 			case (tiposIguales t1 t2) of
 					false => error ("Tipos no comparables", nl)
 				|	true => (case t1 of 
@@ -192,14 +192,14 @@ fun transExp(venv, tenv) =
 			    val _ = if tiposIguales tyhi (TInt RW) andalso tiposIguales tylo (TInt RW) then ()
 						else error ("Los límites del for deben ser expresiones enteras", nl)
 				val venv' = tabRInserta (var, Var {ty = TInt RO}, venv) (* TEST *)
-				val {ty = tybody, ...} = transExp(venv', tenv) body 
+				val {ty = tybody, ...} = transExp(venv', tenv) body
 				val _ = if tybody <> TUnit then error ("El cuerpo del for debe ser de tipo unit", nl) else ()
 			in
 				{ty = TUnit, exp = ()}
 			end
 		| trexp(LetExp({decs, body}, _)) =
 			let
-				val (tenv', venv', _(*ef. lat. de cod. intermedio*)) = (tenv,venv,22) (* Esto hay que cambiarlo! *)
+				val (tenv', venv', _(*ef. lat. de cod. intermedio*)) = transDec(tenv,venv,[],decs)
 				val {exp,ty=tybody}=transExp(venv', tenv') body
 			in
 				{exp=(), ty=tybody}
@@ -232,9 +232,7 @@ fun transExp(venv, tenv) =
 	                     TArray (t,_) => {exp=(), ty=t}
 	                     | _ => error("Indexando algo que no es un arreglo", nl) end
         in trexp end
-
-(* Como trdec toma venv y tenv no deberiamos ponerla adentro de transExp y deberiamos llamarla transDec *)
-	            
+(* CODIGO VIEJO: Como trdec toma venv y tenv no deberiamos ponerla adentro de transExp y deberiamos llamarla transDec *)
 (* trdec (venv, tenv) (VarDec ({name,escape,typ=NONE,init},pos)) = 
 	(venv, tenv, []) (*COMPLETAR*)
 | trdec (venv,tenv) (VarDec ({name,escape,typ=SOME s,init},pos)) =
@@ -243,6 +241,27 @@ fun transExp(venv, tenv) =
 	(venv, tenv, []) (*COMPLETAR*)
 | trdec (venv,tenv) (TypeDec ts) =
 	(venv, tenv, []) (*COMPLETAR*) *)
+and transDec(tenv,venv,el,[]) = (tenv,venv,el)
+  | transDec(tenv,venv,el, (VarDec ({name, escape, typ=NONE, init},nl))::t) =
+        let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
+            val venv' = tabRInserta(name, Var {ty=tyi}, venv)
+            in transDec(tenv,venv',el,t) end
+  | transDec(tenv,venv,el, (VarDec ({name, escape, typ=SOME syty, init},nl))::t) =
+        let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
+            val _ = ( case tabBusca(syty,tenv) of
+                       NONE => error("Tipo "^syty^" indefinido",nl) (* TEST: no se puede hacer algo como var x:NIL := nil de alguna forma sucia? *)
+                     | SOME tyi' => if tiposIguales tyi' tyi then () else error("La expresion asignada no es del tipo esperado "^syty,nl) )
+            val venv' = tabRInserta(name, Var {ty=tyi}, venv)
+            in transDec(tenv,venv',el,t) end
+   | transDec(tenv,venv,el, _) = (tenv,venv,el)
+and transField(venv,tenv,{name, escape, typ=(NameTy syty)},nl) =
+        ( case tabBusca(syty,tenv) of
+              NONE => error("Tipo "^syty^" indefinido",nl)
+            | SOME ty => tabRInserta(name,Var {ty=ty},venv)  )
+   | transField(venv,tenv,{name, escape, typ=_},nl) = raise Fail "creo que esto no deberia pasar 22!" (* TEST seguro que eso no pasa? *)
+
+(* TEST var x := while ... 
+*)
 
 fun transProg ex =
 	let	val main =

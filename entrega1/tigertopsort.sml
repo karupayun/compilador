@@ -20,12 +20,12 @@ Res: resultado.  *)
 fun topsort P =
 	let	fun candidato E P =
 			List.filter (fn e => List.all((op<> rs e) o snd) P) E
-		fun tsort P [] Res = rev Res
-		| tsort [] St Res = rev(St @ Res)
+		fun tsort P [] Res = rev Res (* es O(P*V) osea N^3 en un grafo general, aunque en este es N^2 (mariano) *)
+		| tsort [] St Res = rev(St @ Res) (* esto creo que es una optimizacion, no es necesario (mariano) *)
 		| tsort P (St as (h::t)) Res =
 			let	val x = (hd(candidato St P)) handle Empty => raise Ciclo
 			in	tsort (P --- x) (St -- x) (x::Res) end
-	fun elementos lt =
+	fun elementos lt = (* dada una lista de pares lt devuelve dominio(lt) union rango(lt) de una forma horrible *)
 		List.foldr (fn((x, y), l) =>
 			let	val l1 = case List.find (op= rs x) l of
 							NONE => x::l | _ => l
