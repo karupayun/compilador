@@ -199,7 +199,7 @@ fun transExp(venv, tenv) =
 			end
 		| trexp(LetExp({decs, body}, _)) =
 			let
-				val (tenv', venv', _(*ef. lat. de cod. intermedio*)) = trdec(tenv, venv) decs
+				val (tenv', venv', _(*ef. lat. de cod. intermedio*)) = (tenv,venv,22) (* Esto hay que cambiarlo! *)
 				val {exp,ty=tybody}=transExp(venv', tenv') body
 			in
 				{exp=(), ty=tybody}
@@ -207,42 +207,43 @@ fun transExp(venv, tenv) =
 			
 			
 		| trexp(BreakExp nl) =
-			{exp=(), ty=TUnit} (*COMPLETAR*)
+			{exp=(), ty=TUnit}
 		| trexp(ArrayExp({typ, size, init}, nl)) =
 			{exp=(), ty=TUnit} (*COMPLETAR*)
-		and trvar(SimpleVar s, nl) =
-            case tabBusca venv s of
-                SOME t => {exp=(), ty=t}
-                NONE => error("Variable"^s^"no definida",nl)
+		and trvar(SimpleVar s, nl) =  
+			    ( case tabBusca(s,tenv) of
+                       SOME t => {exp=(), ty=t} 
+                       | _ => error("Variable"^s^"no definida",nl) )
 		| trvar(FieldVar(v, s), nl) =
-            let 
-                val {expv, tyv} = trvar(v,nl)
-                val t = case tyv of
-                            TRecord (l,_) => case List.filter (fun x => x.1 = s ) l of
-                                                [] => error("Record no tiene campo"^s,nl)
-                                                e:l' => e.2
-                            _ => error("No se puede indexar porque no es Record",nl)
-                in {exp=(), ty=t}
+	        let 
+	            val {exp=expv, ty=tyv} = trvar(v,nl)
+	            val t = ( case tyv of
+	                         TRecord (l,_) => ( case List.filter (fn x => #1x = s ) l of
+	                                             [] => error("Record no tiene campo"^s,nl)
+	                                             | (e::_) => #2e )
+	                         | _ => error("No se puede indexar porque no es Record",nl) )
+	            in {exp=(), ty=t} end
 		| trvar(SubscriptVar(v, e), nl) =
-            let
-                val {expe, te} = trexp e
-                val {expv, tv} = trvar v
-                val _ = case te of
-                        TInt _ => ()
-                        _ => error("Indice debe ser entero",nl)
-                val t = case tv of
-                            TArray (t,_) => 
-                            _ => error("Indexando algo que no es un arreglo", nl)
-                in {exp=(), ty=t}
-		and trdec (venv, tenv) (VarDec ({name,escape,typ=NONE,init},pos)) = 
-			(venv, tenv, []) (*COMPLETAR*)
-		| trdec (venv,tenv) (VarDec ({name,escape,typ=SOME s,init},pos)) =
-			(venv, tenv, []) (*COMPLETAR*)
-		| trdec (venv,tenv) (FunctionDec fs) =
-			(venv, tenv, []) (*COMPLETAR*)
-		| trdec (venv,tenv) (TypeDec ts) =
-			(venv, tenv, []) (*COMPLETAR*)
-	in trexp end
+	        let
+	            val {exp=expe, ty=te} = trexp e
+	            val {exp=expv, ty=tv} = trvar(v,nl)
+            val _ = if tiposIguales te (TInt RW) then () else error("Indice debe ser entero",nl)
+	            in  case tv of
+	                     TArray (t,_) => {exp=(), ty=t}
+	                     | _ => error("Indexando algo que no es un arreglo", nl) end
+        in trexp end
+
+(* Como trdec toma venv y tenv no deberiamos ponerla adentro de transExp y deberiamos llamarla transDec *)
+	            
+(* trdec (venv, tenv) (VarDec ({name,escape,typ=NONE,init},pos)) = 
+	(venv, tenv, []) (*COMPLETAR*)
+| trdec (venv,tenv) (VarDec ({name,escape,typ=SOME s,init},pos)) =
+	(venv, tenv, []) (*COMPLETAR*)
+| trdec (venv,tenv) (FunctionDec fs) =
+	(venv, tenv, []) (*COMPLETAR*)
+| trdec (venv,tenv) (TypeDec ts) =
+	(venv, tenv, []) (*COMPLETAR*) *)
+
 fun transProg ex =
 	let	val main =
 				LetExp({decs=[FunctionDec[({name="_tigermain", params=[],
