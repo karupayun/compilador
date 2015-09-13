@@ -62,7 +62,7 @@ Con las declaraciones de funciones pasa lo mismo (se hacen lista dentro de Funct
 la recursividad mutua solo se permite dentro del bloque.
 
 function f(a:int, b:string, c:R) : int = ...
-name -> f   field -> (a:int, b:string, c:R) result -> int
+name -> f   params -> (a:int, b:string, c:R)      result -> int     body = ...
 *)
 
 

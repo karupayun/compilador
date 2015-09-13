@@ -19,7 +19,7 @@ sig
 	val f : int -> int
 end
 
-Se le puede impoer una signatura a una estructura (*DUDA: Que es una signatura *)
+Se le puede imponer una signatura a una estructura (*DUDA: Que es una signatura *)
 Ej: 
 
 signature SG =
@@ -63,7 +63,7 @@ struct
 	fun g n = InttoString n
 end
 
-Si tenemos estructuras y signaturas, debiéramos tener funciones (functores)
+Si tenemos estructuras y signaturas, debiéramos tener funciones (y functores)
 
 Ej: Quicksort
 fun qs [] = []
