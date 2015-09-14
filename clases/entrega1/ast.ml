@@ -123,7 +123,7 @@ function f (i:int) =
 in g() end
 
 f y g tendrán sus propios marcos de activación. g accede a i, que está en otro marco de activación (el de F).
-Así que recorremos el AST llevando el reegistro de las variables escapadas.
+Así que recorremos el AST llevando el registro de las variables escapadas.
 
 Ej2:
 let function f (i:int,j:int) = 
@@ -143,6 +143,7 @@ val fromTabla : (''a, 'b) Tabla -> (''a, 'b) Tabla
 val tabNueva : unit -> (''a, 'b) Tabla
 val tabBusca : (''a,(''a, 'b) Tabla) -> 'b option
 val tabALista : (''a, 'b) Tabla -> ''a * b list
+(* fun tabSaca(s, t) = DUDA : Esto está bien?? *)
 
 Como recorrer el AST:
 (* DUDA : No entiendo esta parte *)

@@ -1,4 +1,4 @@
 Pablo:
-En este momento no estoy haciendo nada. 
+Entendiendo escapes. 
 Mariano:
 DecsFunc de transdec

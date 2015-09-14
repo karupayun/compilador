@@ -20,7 +20,7 @@ fun tabEsta(s, t) =
 fun tabInserta(s, e, t) = let val t' = copy t in (peekInsert t' (s, e); t') end
 fun tabRInserta(s, e, t) = let val t' = copy t in (insert t' (s, e); t') end
 fun tabBusca(s, t) = peek t s
-fun tabSaca(s, t) =
+fun tabSaca(s, t) = (* DUDA : Esto está bien?? *)
 	case tabBusca(s, t) of
 	SOME t => t
 	| NONE => raise noExiste
