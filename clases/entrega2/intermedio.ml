@@ -1,4 +1,4 @@
-(* Etapa 6 : Codigo Intermedio -- Entrega 2 *)
+(* Etapa 6 : Codigo Intermedio -- Entrega 2 -- 31/8 *)
 
 Pasemos a considerar el código intermedio:
 
