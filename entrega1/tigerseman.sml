@@ -3,6 +3,7 @@ struct
 
 open tigerabs
 open tigersres
+open tigerpp
 
 type expty = {exp: unit, ty: Tipo}
 
@@ -209,7 +210,17 @@ fun transExp(venv, tenv) =
 		| trexp(BreakExp nl) =
 			{exp=(), ty=TUnit}
 		| trexp(ArrayExp({typ, size, init}, nl)) =
-			{exp=(), ty=TUnit} (*COMPLETAR*)
+            let
+                val {exp=exps,ty=tys} = trexp size
+                val {exp=expi,ty=tyi} = trexp init
+                val _ = if tiposIguales tys (TInt RO) then () else error("El size del arreglo no es entero",nl)
+                val (ta,ur) = ( case tabBusca(typ,tenv) of
+                                  SOME t => ( case t of
+                                                  TArray (ta',ur') => (ta',ur')
+                                                | _ => error("El tipo "^typ^" no es un arreglo",nl) )
+                                  | _ => error("Tipo "^typ^" no definido",nl) )
+                val _ = if tiposIguales ta tyi then () else error("La expresion inicializadora no es un "^typ,nl)
+			in {exp=(), ty=TArray (ta,ur)} end
 		and trvar(SimpleVar s, nl) =  
 			    ( case tabBusca(s,tenv) of
                        SOME t => {exp=(), ty=t} 
@@ -253,13 +264,27 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
                      | SOME tyi' => if tiposIguales tyi' tyi then () else error("La expresion asignada no es del tipo esperado "^syty,nl) )
             val venv' = tabRInserta(name, Var {ty=tyi}, venv)
             in transDec(tenv,venv',el,t) end
-   | transDec(tenv,venv,el, _) = (tenv,venv,el)
-and transField(venv,tenv,{name, escape, typ=(NameTy syty)},nl) =
-        ( case tabBusca(syty,tenv) of
-              NONE => error("Tipo "^syty^" indefinido",nl)
-            | SOME ty => tabRInserta(name,Var {ty=ty},venv)  )
-   | transField(venv,tenv,{name, escape, typ=_},nl) = raise Fail "creo que esto no deberia pasar 22!" (* TEST seguro que eso no pasa? *)
-
+   | transDec(tenv,venv,el, (FunctionDec lf)::t) = (* Esta funcion esta siendo debuggeada *)
+	    let fun searchTy nl syty = 
+                    (case tabBusca(syty,tenv) of
+                           NONE => error("Tipo "^syty^" indefinido",nl)
+                         | SOME ty => ty )
+            fun procField [] _ = []
+                | procField ({name, escape=_, typ=(NameTy syty)}::xs) nl = (searchTy nl syty) :: (procField xs nl)
+                | procField _ _ = raise Fail "creo que esto no deberia pasar 22!" (* TEST seguro que eso no pasa? *)
+            val argsTipos = map ( fn(func, nl) => procField (#params func) nl ) lf
+            val argsNombres = map ((map #name) o #params o #1) lf
+            val retTipo = map (  fn(func,nl) => Option.getOpt(Option.map (searchTy nl) (#result func),TUnit)  ) lf
+            val funcName = map (#name o #1) lf
+            val venvWithFuncs =  List.foldl (   fn((fname,(argT, retT)),v) => tabRInserta(fname,Func {level=(), label="", formals=argT, result=retT,extern=false},v)   ) venv (ListPair.zip(funcName,ListPair.zip(argsTipos, retTipo)))
+            val funcsArgsTipos = map ListPair.zip (ListPair.zip(argsTipos,argsNombres))
+            val funcvEnvs = map (foldl (fn((argT,argN),v)=>tabRInserta(argN, Var {ty=argT}, venv)) venvWithFuncs) funcsArgsTipos
+            val nlS = map #2 lf
+            val funcBodies = map (#body o #1) lf
+            val funcsTrans =  map (fn(fEnv,fBody) => transExp(fEnv,tenv) fBody) (ListPair.zip(funcvEnvs,funcBodies))
+            val _ = List.app (  fn(nl,(retT,fTy)) => if retT=TUnit orelse tiposIguales retT fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl)) ) (ListPair.zip(nlS,ListPair.zip(retTipo,map #ty funcsTrans))) (* DUDA: la condición tiene un parche *)
+        in transDec(tenv,venvWithFuncs,el,t) end
+    | transDec(tenv,venv,el,_) = raise Fail "TODO"
 (* TEST var x := while ... 
 *)
 
