@@ -222,9 +222,11 @@ fun transExp(venv, tenv) =
                 val _ = if tiposIguales ta tyi then () else error("La expresion inicializadora no es un "^typ,nl)
 			in {exp=(), ty=TArray (ta,ur)} end
 		and trvar(SimpleVar s, nl) =  
-			    ( case tabBusca(s,tenv) of
-                       SOME t => {exp=(), ty=t} 
-                       | _ => error("Variable"^s^"no definida",nl) )
+			    ( case tabBusca(s,venv) of
+                       SOME t => (case t of 
+								  Var {ty} => {exp=(), ty=ty} 
+								| _ => error(s^" no es una variable",nl) )
+                       | _ => error("Variable "^s^" no definida",nl) )
 		| trvar(FieldVar(v, s), nl) =
 	        let 
 	            val {exp=expv, ty=tyv} = trvar(v,nl)
@@ -279,10 +281,11 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
             val venvWithFuncs =  List.foldl (   fn((fname,(argT, retT)),v) => tabRInserta(fname,Func {level=(), label="", formals=argT, result=retT,extern=false},v)   ) venv (ListPair.zip(funcName,ListPair.zip(argsTipos, retTipo)))
             val funcsArgsTipos = map ListPair.zip (ListPair.zip(argsTipos,argsNombres))
             val funcvEnvs = map (foldl (fn((argT,argN),v)=>tabRInserta(argN, Var {ty=argT}, venv)) venvWithFuncs) funcsArgsTipos
+			val _ =  tigerpp.ppvenv (List.nth(funcvEnvs,1))
             val nlS = map #2 lf
             val funcBodies = map (#body o #1) lf
             val funcsTrans =  map (fn(fEnv,fBody) => transExp(fEnv,tenv) fBody) (ListPair.zip(funcvEnvs,funcBodies))
-            val _ = List.app (  fn(nl,(retT,fTy)) => if retT=TUnit orelse tiposIguales retT fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl)) ) (ListPair.zip(nlS,ListPair.zip(retTipo,map #ty funcsTrans))) (* DUDA: la condición tiene un parche *)
+            val _ = List.app (  fn(nl,(retT,fTy)) => if retT=TUnit orelse tiposIguales retT fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl)) ) (ListPair.zip(nlS,ListPair.zip(retTipo,map #ty funcsTrans))) (* DUDA: la condición tiene un parche *) (*DUDA: que pasa si varias funciones se llaman con el mismo nombre en un batch?? *)
         in transDec(tenv,venvWithFuncs,el,t) end
     | transDec(tenv,venv,el,_) = raise Fail "TODO"
 (* TEST var x := while ... 
