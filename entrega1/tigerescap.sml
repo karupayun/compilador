@@ -25,7 +25,7 @@ and travExp env d s =
 	| RecordExp({fields, typ}, _) =>
 		List.app ((travExp env d) o #2) fields
 	| SeqExp(le, _) => List.app (travExp env d) le
-		(* (List.foldl (fn (e, (v, d)) => (travExp v d e; (v, d)))  (* codigo viejo *)
+		(* (List.foldl (fn (e, (v, d)) => (travExp v d e; (v, d))) 
 			(env, d) le; ()) *)
 	| AssignExp({var, exp}, _) =>
 		(travVar env d var; travExp env d exp)
@@ -34,16 +34,16 @@ and travExp env d s =
 	| IfExp({test, then', else'=SOME e}, _) =>
 		(travExp env d test; travExp env d then'; travExp env d e)
 	| WhileExp({test, body}, _) =>
-		(travExp env d test; travExp env d body)
+		(travExp env d test; travExp env d body) (* ok *)
 	| ForExp({var, escape, lo, hi, body}, _) =>
-		let	val env' = tabRInserta(var, (d, escape), env);
+		let	val env' = tabRInserta(var, (d, escape), env); (* DUDA: Se puede definir una función dentro de un FOR? *)
 		in	travExp env d  lo;
 			travExp env d  hi;
 			travExp env' d  body
 		end
 	| LetExp({decs, body}, _) =>
 		travExp (travDecs env d decs) d body
-	| ArrayExp({typ, size, init}, _) => (travExp env d init ; travExp env d size) (* no falta aplicarlo a size?  lo modifique para que sea asi*)
+	| ArrayExp({typ, size, init}, _) => (travExp env d init ; travExp env d size) (* DUDA: No entiendo estas expresiones. ¿¿a[5] es una arrayExp?? *)
 	| _ => ()
 and travDecs env d [] = env
 | travDecs env d (s::t) =
@@ -55,7 +55,7 @@ and travDecs env d [] = env
 							tabRInserta(#name(x), (d+1, #escape(x)), e)
 						val env' = foldr aux1 env params
 					in travExp env' (d+1) body end
-				in	List.app aux l ; env end (*aca tambien saque un fold y puse un app *)
+				in	List.app aux l ; env end (* acá tambien saque un fold y puse un app *) (* ERROR: Acá no la batiste Marian?, travDecs no está modificando el entorno *)
 			| VarDec({name, escape, typ, init}, _) =>
 				(travExp env d init; tabRInserta(name, (d, escape), env))
 			| TypeDec _ => env

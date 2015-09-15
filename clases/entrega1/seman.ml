@@ -1,6 +1,6 @@
 (* Etapa 4 : Análisis Semántico *)
 
-Esta etapa tomará el AST y lo examinará, chequeando que esté bien tipadao.
+Esta etapa tomará el AST y lo examinará, chequeando que esté bien tipado.
 Nota: Tiger es un compilador broad, excepto en esta etapa, que se hace en paralelo con la generación de código intermedio. 
 	  Para facilitar las cosas, diferiremos la generación de código.
 	 

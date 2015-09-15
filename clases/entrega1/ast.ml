@@ -154,17 +154,17 @@ fun fescapes (IntExp _) env prof = ()
 |	fescapes (VarExp (var, nl)) env prof =
 		case tabBusca (var,env) of
 			NONE => raise Fail ("variable "^var^" no existe!")
-		|	SOME (escape,p) => if p < prof then escape := true else ()
+		|	SOME (escape,p) => if p < prof then escape := true else () (* Esta es la utilidad de fescapes, setear el escape en true *)
 |	fescapes (LetExp ({decs,body},_) env prof = 
-		fescapes body (fdecs decs en prof) prof
+		fescapes body (fdecs decs en prof) prof (* fdecs retornara el nuevo entorno *)
 
 and fdecs (VarDec {name, escape, init, ...},_) env prof =
-		(fescapes init env prof; tabInserta (name, (escape, prof), env))
+		(fescapes init env prof; tabInserta (name, (escape, prof), env)) (* Acá se inserta la referencia al escape:*Bool  *)
 |	fdecs (FunctionDec (lst) env prof = 
 		let fun fdec ({name, params, body, ...}, env) =
-		let val env' = foldr (fn {name, escape, ...} => (tabInserta (name, (escape,prof))))
-		in fescapes body env' (prof+1) end
-	in fold (fdec env lst) end
+			let val env' = foldr (fn {name, escape, ...} => (tabInserta (name, (escape,prof))))
+			in fescapes body env' (prof+1) end
+		in fold (fdec env lst) end
 	
 	
 
