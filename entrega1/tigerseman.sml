@@ -274,18 +274,19 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
             fun procField [] _ = []
                 | procField ({name, escape=_, typ=(NameTy syty)}::xs) nl = (searchTy nl syty) :: (procField xs nl)
                 | procField _ _ = raise Fail "creo que esto no deberia pasar 22!" (* TEST seguro que eso no pasa? *)
-            val argsTipos = map ( fn(func, nl) => procField (#params func) nl ) lf
-            val argsNombres = map ((map #name) o #params o #1) lf
-            val retTipo = map (  fn(func,nl) => Option.getOpt(Option.map (searchTy nl) (#result func),TUnit)  ) lf
             val funcName = map (#name o #1) lf
+	        val ocurrenciasNombres = List.map (fn(x) => List.length (List.filter (fn(y)=>y=x) funcName)) funcName
+	        val _ = List.foldl (  fn(x,y)=> if x=1 then y+1 else error("Nombres de funciones repetidos en el mismo batch", #2 (List.nth(lf,y)) )  ) 0 ocurrenciasNombres  (* chequeo que no haya nombres repetido, hay un foldl para llevar un recuento del índice y acceder al número de línea *)
+            val argsNombres = map ((map #name) o #params o #1) lf
+            val argsTipos = map ( fn(func, nl) => procField (#params func) nl ) lf
+            val retTipo = map (  fn(func,nl) => Option.getOpt(Option.map (searchTy nl) (#result func),TUnit)  ) lf
             val venvWithFuncs =  List.foldl (   fn((fname,(argT, retT)),v) => tabRInserta(fname,Func {level=(), label="", formals=argT, result=retT,extern=false},v)   ) venv (ListPair.zip(funcName,ListPair.zip(argsTipos, retTipo)))
             val funcsArgsTipos = map ListPair.zip (ListPair.zip(argsTipos,argsNombres))
             val funcvEnvs = map (foldl (fn((argT,argN),v)=>tabRInserta(argN, Var {ty=argT}, venv)) venvWithFuncs) funcsArgsTipos
-			val _ =  tigerpp.ppvenv (List.nth(funcvEnvs,1))
             val nlS = map #2 lf
             val funcBodies = map (#body o #1) lf
             val funcsTrans =  map (fn(fEnv,fBody) => transExp(fEnv,tenv) fBody) (ListPair.zip(funcvEnvs,funcBodies))
-            val _ = List.app (  fn(nl,(retT,fTy)) => if retT=TUnit orelse tiposIguales retT fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl)) ) (ListPair.zip(nlS,ListPair.zip(retTipo,map #ty funcsTrans))) (* DUDA: la condición tiene un parche *) (*DUDA: que pasa si varias funciones se llaman con el mismo nombre en un batch?? *)
+            val _ = List.app (  fn(nl,(retT,fTy)) => if tiposIguales retT fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl)) ) (ListPair.zip(nlS,ListPair.zip(retTipo,map #ty funcsTrans))) 
         in transDec(tenv,venvWithFuncs,el,t) end
     | transDec(tenv,venv,el,_) = raise Fail "TODO"
 (* TEST var x := while ... 
@@ -294,7 +295,7 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
 fun transProg ex =
 	let	val main =
 				LetExp({decs=[FunctionDec[({name="_tigermain", params=[],
-								result=NONE, body=ex}, 0)]],
+								result=SOME "int", body=ex}, 0)]],
 						body=UnitExp 0}, 0)
 		val _ = transExp(tab_vars, tab_tipos) main
 	in	print "bien!\n" end
