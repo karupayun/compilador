@@ -38,6 +38,8 @@ val tab_vars : (string, EnvEntry) Tabla = tabInserList(
 		formals=[TInt RW], result=TUnit, extern=true})
 	])
 
+fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
+
 fun tiposIguales (TInt _) (TInt _) = true
   | tiposIguales (TRecord _) TNil = true
   | tiposIguales TNil (TRecord _) = true 
@@ -61,16 +63,16 @@ fun tiposIguales (TInt _) (TInt _) = true
 		(* end *)raise Fail "No debería pasar! (1)"
   | tiposIguales a b = (a=b)
 
-fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
-fun transExp(venv, tenv) =
-	let fun cmptipo t1 t2 nl = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
+fun cmptipo t1 t2 nl = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
 			case (tiposIguales t1 t2) of
 					false => error ("Tipos no comparables", nl)
 				|	true => (case t1 of 
 								(TInt _) => (TInt RW)
 							|	TNil	 => t2
 							|	_		 => t1)	
-		fun trexp(VarExp v) = trvar(v)
+
+fun transExp(venv, tenv) =
+	let fun trexp(VarExp v) = trvar(v)
 		| trexp(UnitExp _) = {exp=(), ty=TUnit}
 		| trexp(NilExp _)= {exp=(), ty=TNil}
 		| trexp(IntExp(i, _)) = {exp=(), ty=TInt RW}
@@ -153,16 +155,10 @@ fun transExp(venv, tenv) =
 				val exprs = map (fn{exp, ty} => exp) lexti
 				val {exp, ty=tipo} = hd(rev lexti)
 			in	{ exp=(), ty=tipo } end
-		(*| trexp(AssignExp({var=SimpleVar s, exp}, nl)) = 
-		    let val {exp=expv, ty=tyv} = trvar(SimpleVar s,nl)
-		        val {exp=expe, ty=tye} = trexp(exp)
-		        val _ = cmptipo tyv tye 
-			in {exp=(), ty=TUnit} 
-			end*)
 		| trexp(AssignExp({var, exp}, nl)) =
 		    let val {exp=expv, ty=tyv} = trvar(var,nl)
 		        val {exp=expe, ty=tye} = trexp(exp)
-		        val _ = cmptipo tyv tye (* NO ANDA!*)
+		        (*val _ = cmptipo tyv tye (* NO ANDA!*) Esta linea no esta al pedo? *)
                 val _ = if (tiposIguales tyv tye) then () else error("los tipos no coinciden en la asignacion",nl)                
                 val _ = if tyv = TInt RO then error("Intentando asignar una variable RO",nl) else () 
 			in {exp=(), ty=TUnit} 
@@ -249,15 +245,6 @@ fun transExp(venv, tenv) =
 	                     TArray (t,_) => {exp=(), ty=(!t)}
 	                     | _ => error("Indexando algo que no es un arreglo", nl) end
         in trexp end
-(* CODIGO VIEJO: Como trdec toma venv y tenv no deberiamos ponerla adentro de transExp y deberiamos llamarla transDec *)
-(* trdec (venv, tenv) (VarDec ({name,escape,typ=NONE,init},pos)) = 
-	(venv, tenv, []) (*COMPLETAR*)
-| trdec (venv,tenv) (VarDec ({name,escape,typ=SOME s,init},pos)) =
-	(venv, tenv, []) (*COMPLETAR*)
-| trdec (venv,tenv) (FunctionDec fs) =
-	(venv, tenv, []) (*COMPLETAR*)
-| trdec (venv,tenv) (TypeDec ts) =
-	(venv, tenv, []) (*COMPLETAR*) *)
 and transDec(tenv,venv,el,[]) = (tenv,venv,el)
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=NONE, init},nl))::t) =
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
@@ -268,10 +255,10 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
             val _ = ( case tabBusca(syty,tenv) of
                        NONE => error("Tipo "^syty^" indefinido",nl) (* TEST: no se puede hacer algo como var x:NIL := nil de alguna forma sucia? *)
-                     | SOME tyi' => if tiposIguales tyi' tyi then () else error("La expresion asignada no es del tipo esperado "^syty,nl) )
+                     | SOME tyi' => if tiposIguales tyi' tyi then () else error("La expresion asignada no es del tipo esperado "^syty,nl) ) (* TEST: Se puede asignar nil a un record? *)
             val venv' = tabRInserta(name, Var {ty=tyi}, venv)
             in transDec(tenv,venv',el,t) end
-   | transDec(tenv,venv,el, (FunctionDec lf)::t) = (* Esta funcion esta siendo debuggeada *)
+   | transDec(tenv,venv,el, (FunctionDec lf)::t) = 
 	    let fun searchTy nl syty = 
                     (case tabBusca(syty,tenv) of
                            NONE => error("Tipo "^syty^" indefinido",nl)
