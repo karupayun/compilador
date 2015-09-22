@@ -1,0 +1,9 @@
+#!/bin/bash
+# Uso: correr ./dotest en la carpeta donde estén los casos a testear
+TEST_FILES=*.tig
+for f in $TEST_FILES
+    do
+        echo "$f:"
+        ./tiger $f
+        echo ""
+    done
