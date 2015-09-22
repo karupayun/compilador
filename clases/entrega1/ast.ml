@@ -146,7 +146,6 @@ val tabALista : (''a, 'b) Tabla -> ''a * b list
 (* fun tabSaca(s, t) = DUDA : Esto está bien?? *)
 
 Como recorrer el AST:
-(* DUDA : No entiendo esta parte *)
 fun fescapes (IntExp _) env prof = () 
 |	fescapes (NilExp _) _ _ = () 
 |	fescapes (IfExp ({test, then', else' = NONE}, _) env prof =	

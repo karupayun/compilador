@@ -42,7 +42,7 @@ Esto determinará cuándo y qué operaciones se les podrán aplicar.
 
 a1 := a2  (* Dos arreglos *) --> Obvio, cuando tengan el mismo tipo.
 
-Propuesta (C): Dos valores tienen el mismo tipo si tienen la misma estructura
+Propuesta1 (C): Dos valores tienen el mismo tipo si tienen la misma estructura
 
 struct A {int i; double d} s1;
 struct B {int j; double f} s2;
@@ -59,7 +59,7 @@ let
 	type A = array of int
 	var a := A[10] of 0
 	type A = array of int
-	var a := A[10] of 1
+	var b := A[10] of 1
 in
 	a := b (* incorrecto *)
 	0
@@ -227,14 +227,14 @@ let
 Detalle de implementación.
 Si es posible, el runtime se hará en C, para aprovechar las facilidades de libc. 
 En UNIX, el startup se linkea para producir un ejecutable (el startup colecta argumentos, entornos, etc). El startup luego invoca a main.
-Para dejar contento al startup, definiremos un main en el runtime; de acaá tendremos que pasasr al código de tiger.
+Para dejar contento al startup, definiremos un main en el runtime; de acá tendremos que pasar al código de tiger.
 
 El main tendrá esta pinta:
 
 int main
 {
 	código antes de tigermain
-	return rigermain (0);
+	return tigermain (0);
 }
 
 Así que deberemos poder fabricar un _tigermain en algún momento. La haremos en el seman con el sgte. sucio truco.

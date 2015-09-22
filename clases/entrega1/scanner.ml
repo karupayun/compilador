@@ -70,7 +70,7 @@ rule Lexer parse
 
 /* Scanner para coment */
 and Coment = parse
-	eof		{raise Faiil "Comentario no cerrado"}
+	eof		{raise Fail "Comentario no cerrado"}
 |	"/*"	{incComent()}
 |	"*/"	{IF decComent() = 0 then () else Coment lexbuf}
 |	'\n'	{Cuenta los \n}
@@ -78,8 +78,8 @@ and Coment = parse
 
 /* Scanner para string */
 and String = parse
-	eof		{raise Faiil "String no cerrada"}
-|	'"'		{""} (*DUDA: Que es esto?*)
+	eof		{raise Fail "String no cerrada"}
+|	'"'		{""} 
 |	"\\\\"	{"\\" ^ String lexbuf}
 |	"\\n"	{"\n" ^ String lexbuf} 
 |	'\\'	{String1 lexbuf}
