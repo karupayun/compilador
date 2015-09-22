@@ -1,0 +1,8 @@
+/* mar1 */
+
+let
+	type a = {i:int}
+	var arr1 : a := nil
+in
+	arr1.i
+end

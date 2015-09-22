@@ -49,7 +49,8 @@ fun genPares lt =
 	let
 		val lrecs = buscaArrRecords lt
 		fun genP [] res = res
-		| genP ({name, ty=NameTy s'}::t) res = (print("NameTy "^s'^"\n"); genP t ((s', name)::res)   )
+(*		| genP ({name, ty=NameTy s'}::t) res = (print("NameTy "^s'^"\n"); genP t ((s', name)::res)   ) Usar esta para debugear *)
+		| genP ({name, ty=NameTy s'}::t) res = genP t ((s', name)::res)  
 		| genP ({name, ty=ArrayTy s'}::t) res = genP t ((s', name)::res)
 		| genP ({name, ty=RecordTy lf}::t) res = genP t res
 	in	genP lt [] end
@@ -108,6 +109,6 @@ fun fijaTipos batch env =
 		val env' = procesa orden batch env recs
 		val env'' = agregarecs env' recs
 		val env''' = fijaNONE (tabAList env'') env''
-val _ = tigermuestratipos.printTTipos(tabAList env'')
+ val _ = tigermuestratipos.printTTipos(tabAList env'')  (* Esto lo saco porque molesta, es solo para debug*)
 	in	env''' end
 end

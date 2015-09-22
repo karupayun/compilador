@@ -234,7 +234,7 @@ fun transExp(venv, tenv) =
 	                         TRecord (l,_) => ( case List.filter (fn x => #1x = s ) l of
 	                                             [] => error("Record no tiene campo "^s,nl)
 	                                             | (e::_) => #2e )
-	                         | _ => error("No se puede indexar porque no es Record",nl) )
+	                         | _ => (tigerpp.ppTipo(tyv) ; error("No se puede indexar porque no es Record",nl)) )
 	            in {exp=(), ty=(!t)} end
 		| trvar(SubscriptVar(v, e), nl) =
 	        let
@@ -253,10 +253,10 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
             in transDec(tenv,venv',el,t) end
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=SOME syty, init},nl))::t) =
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
-            val _ = ( case tabBusca(syty,tenv) of
+            val rt = ( case tabBusca(syty,tenv) of
                        NONE => error("Tipo "^syty^" indefinido",nl) (* TEST: no se puede hacer algo como var x:NIL := nil de alguna forma sucia? *)
-                     | SOME tyi' => if tiposIguales tyi' tyi then () else error("La expresion asignada no es del tipo esperado "^syty,nl) ) (* TEST: Se puede asignar nil a un record? *)
-            val venv' = tabRInserta(name, Var {ty=tyi}, venv)
+                     | SOME tyi' => if tiposIguales tyi' tyi then cmptipo tyi' tyi nl else error("La expresion asignada no es del tipo esperado "^syty,nl) ) (* TEST: Se puede asignar nil a un record? *)
+            val venv' = tabRInserta(name, Var {ty=rt}, venv)
             in transDec(tenv,venv',el,t) end
    | transDec(tenv,venv,el, (FunctionDec lf)::t) = 
 	    let fun searchTy nl syty = 
@@ -287,7 +287,7 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
             val _ = List.foldl (  fn(x,y)=> if x=1 then y+1 else error("Nombres de tipos repetidos en el mismo batch", #2 (List.nth(lt,y)) )  ) 0 ocurrenciasNombres  (* chequeo que no haya nombres repetido, hay un foldl para llevar un recuento del índice y acceder al número de línea *)            
             val tenv' = tigertopsort.fijaTipos (map (#1) lt) tenv
                 handle noExiste => raise Fail ("Error: tipo inexistente en el batch")
-                handle Ciclo => raise Fail ("Error: hay un ciclo") (*no funciona!*)
+                     | Ciclo => raise Fail ("Error: hay un ciclo")
             in transDec(tenv', venv, el, t) end	       
    
    
