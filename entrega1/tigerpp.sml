@@ -227,11 +227,11 @@ and printTipo TUnit = "Unit"
 |   printTipo (TInt RW) = "Int RW"
 |   printTipo (TInt _) = "Int RO"
 |   printTipo TString = "String"
-|   printTipo (TArray (t,_)) = "["^printTipo(t)^"]"
-|   printTipo (TRecord (l,_)) = let val visitorFunc = fn ((name,ty,pos),x) => x^", "^name^"="^printTipo(ty)
+|   printTipo (TArray (t,_)) = "["^printTipo(!t)^"]"
+|   printTipo (TRecord (l,_)) = let val visitorFunc = fn ((name,ty,pos),x) => x^", "^name^"="^printTipo(!ty)
                                     val recordContenido = String.extract(foldl visitorFunc "" l,2,NONE)
                                 in "{"^ recordContenido ^"}" end
-|   printTipo (TTipo (s,_))   = s
+|   printTipo (TTipo s)   = s
 
 fun ppTab (aPrint:'a->unit) (bPrint:'b->unit) tab = let val l = tabAList tab
                                                         val f = fn ( (a,b),_) => ( aPrint a; print("=") ; bPrint b; print(" ") )

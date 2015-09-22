@@ -38,8 +38,6 @@ val tab_vars : (string, EnvEntry) Tabla = tabInserList(
 		formals=[TInt RW], result=TUnit, extern=true})
 	])
 
-fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
-
 fun tiposIguales (TInt _) (TInt _) = true
   | tiposIguales (TRecord _) TNil = true
   | tiposIguales TNil (TRecord _) = true 
@@ -61,18 +59,18 @@ fun tiposIguales (TInt _) (TInt _) = true
 		(* in *)
 		(* 	tiposIguales a b *)
 		(* end *)raise Fail "No debería pasar! (1)"
-  | tiposIguales a b = (a=b)  (* ERROR: Nos estamos comiendo el caso de TNil y TNil, es necesaria esta comparación por igualdad? *)
+  | tiposIguales a b = (a=b)
 
-fun cmptipo t1 t2 nl = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
+fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
+fun transExp(venv, tenv) =
+	let fun cmptipo t1 t2 nl = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
 			case (tiposIguales t1 t2) of
 					false => error ("Tipos no comparables", nl)
 				|	true => (case t1 of 
 								(TInt _) => (TInt RW)
 							|	TNil	 => t2
 							|	_		 => t1)	
-
-fun transExp(venv, tenv) =
-	let	fun trexp(VarExp v) = trvar(v)
+		fun trexp(VarExp v) = trvar(v)
 		| trexp(UnitExp _) = {exp=(), ty=TUnit}
 		| trexp(NilExp _)= {exp=(), ty=TNil}
 		| trexp(IntExp(i, _)) = {exp=(), ty=TInt RW}
@@ -83,8 +81,10 @@ fun transExp(venv, tenv) =
 					SOME (Func {formals, result, ...}) => (formals, result)
 				|	_ => error (func^" no es una función", nl)
 				val ltargs = List.map ((#ty) o trexp) args
-			 	val _ = (List.map (fn (x,y) => cmptipo x y nl) (ListPair.zip (ltargs,targs))) 
-			 			handle Empty => error ("Número incorrecto de argumentos", nl) (* TEST: Probar este handle *) 
+                val _ = if (List.length args) > (List.length targs) then error(func^" demasiados argumentos",nl) else if List.length args < List.length targs then error(func^" argumentos insuficientes",nl) else ()
+	
+    		 	val _ = (List.map (fn (x,y) => cmptipo x y nl) (ListPair.zip (ltargs,targs))) 
+			 			(*handle Empty => error ("Número incorrecto de argumentos", nl) (* TEST: Probar este handle *) ListPair.zip no tira excepciones*)
 			in
 				{ty = tresult, exp = ()} 
 			end
@@ -111,18 +111,16 @@ fun transExp(venv, tenv) =
 			in
 				if tiposIguales tyl tyr then
 					case oper of
-						PlusOp => if tiposIguales tyl (TInt RW) then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
-						| MinusOp => if tiposIguales tyl (TInt RW) then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
-						| TimesOp => if tiposIguales tyl (TInt RW) then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
-						| DivideOp => if tiposIguales tyl (TInt RW) then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
-						| LtOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
-						| LeOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
-						| GtOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
-						| GeOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
-						| EqOp => {exp=(),ty=TInt RW} (* Pablo: No estaban, las agregué *)
-						| NeOp => {exp=(),ty=TInt RW} 
-						| _ => raise Fail "No debería pasar! (3)" 
-				else error("La operación tiene tipos distintos", nl)
+						PlusOp => if tiposIguales tyl (TInt RW) then {exp=(),ty=TInt RW} else error("Error de tipos PlusOp", nl)
+						| MinusOp => if tiposIguales tyl (TInt RW) then {exp=(),ty=TInt RW} else error("Error de tipos MinusOp", nl)
+						| TimesOp => if tiposIguales tyl (TInt RW) then {exp=(),ty=TInt RW} else error("Error de tipos TimesOp", nl)
+						| DivideOp => if tiposIguales tyl (TInt RW) then {exp=(),ty=TInt RW} else error("Error de tipos DivideOp", nl)
+						| LtOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos <", nl)
+						| LeOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos <=", nl)
+						| GtOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos >", nl)
+						| GeOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos >=", nl)
+						| _ => raise Fail "No debería pasar! (3)"
+				else error("Error de tipos", nl)
 			end
 		| trexp(RecordExp({fields, typ}, nl)) =
 			let
@@ -142,7 +140,7 @@ fun transExp(venv, tenv) =
 				  | verificar [] (c::cs) = error("Sobran campos", nl)
 				  | verificar ((s,t,_)::cs) ((sy,{exp,ty})::ds) =
 						if s<>sy then error("Error de campo", nl)
-						else if tiposIguales ty t then verificar cs ds
+						else if tiposIguales ty (!t) then verificar cs ds
 							 else error("Error de tipo del campo "^s, nl)
 			    val cs_sorted = Listsort.sort ( fn(x,y) => String.compare (#1x,#1y) ) cs
 			    val tfields_sorted = Listsort.sort ( fn(x,y) => String.compare (#1x,#1y) ) tfields
@@ -155,16 +153,18 @@ fun transExp(venv, tenv) =
 				val exprs = map (fn{exp, ty} => exp) lexti
 				val {exp, ty=tipo} = hd(rev lexti)
 			in	{ exp=(), ty=tipo } end
-		| trexp(AssignExp({var=SimpleVar s, exp}, nl)) = 
+		(*| trexp(AssignExp({var=SimpleVar s, exp}, nl)) = 
 		    let val {exp=expv, ty=tyv} = trvar(SimpleVar s,nl)
 		        val {exp=expe, ty=tye} = trexp(exp)
 		        val _ = cmptipo tyv tye 
 			in {exp=(), ty=TUnit} 
-			end
+			end*)
 		| trexp(AssignExp({var, exp}, nl)) =
 		    let val {exp=expv, ty=tyv} = trvar(var,nl)
 		        val {exp=expe, ty=tye} = trexp(exp)
-		        val _ = cmptipo tyv tye 
+		        val _ = cmptipo tyv tye (* NO ANDA!*)
+                val _ = if (tiposIguales tyv tye) then () else error("los tipos no coinciden en la asignacion",nl)                
+                val _ = if tyv = TInt RO then error("Intentando asignar una variable RO",nl) else () 
 			in {exp=(), ty=TUnit} 
 			end
 		| trexp(IfExp({test, then', else'=SOME else'}, nl)) =
@@ -204,24 +204,26 @@ fun transExp(venv, tenv) =
 			end
 		| trexp(LetExp({decs, body}, _)) =
 			let
-				val (tenv', venv', _(*ef. lat. de cod. intermedio*)) = transDec(tenv,venv,[],decs) (* DUDATEMP: No entender la lista vacía *)
+				val (tenv', venv', _(*ef. lat. de cod. intermedio*)) = transDec(tenv,venv,[],decs)
 				val {exp,ty=tybody}=transExp(venv', tenv') body
 			in
 				{exp=(), ty=tybody}
-			end			
+			end
+			
+			
 		| trexp(BreakExp nl) =
 			{exp=(), ty=TUnit}
 		| trexp(ArrayExp({typ, size, init}, nl)) =
             let
                 val {exp=exps,ty=tys} = trexp size
                 val {exp=expi,ty=tyi} = trexp init
-                val _ = if tiposIguales tys (TInt RO) then () else error("El size del arreglo no es entero",nl)
+                val _ = if tiposIguales tys (TInt RO) then () else error("El size del arreglo no es entero",nl) 
                 val (ta,ur) = ( case tabBusca(typ,tenv) of
                                   SOME t => ( case t of
                                                   TArray (ta',ur') => (ta',ur')
                                                 | _ => error("El tipo "^typ^" no es un arreglo",nl) )
                                   | _ => error("Tipo "^typ^" no definido",nl) )
-                val _ = if tiposIguales ta tyi then () else error("La expresion inicializadora no es un "^typ,nl)
+                val _ = if tiposIguales (!ta) tyi then () else error("La expresion inicializadora no es un "^typ,nl)(*no habria que imprimir !ta?*)
 			in {exp=(), ty=TArray (ta,ur)} end
 		and trvar(SimpleVar s, nl) =  
 			    ( case tabBusca(s,venv) of
@@ -237,15 +239,15 @@ fun transExp(venv, tenv) =
 	                                             [] => error("Record no tiene campo "^s,nl)
 	                                             | (e::_) => #2e )
 	                         | _ => error("No se puede indexar porque no es Record",nl) )
-	            in {exp=(), ty=t} end
+	            in {exp=(), ty=(!t)} end
 		| trvar(SubscriptVar(v, e), nl) =
 	        let
 	            val {exp=expe, ty=te} = trexp e
 	            val {exp=expv, ty=tv} = trvar(v,nl)
-				val _ = if tiposIguales te (TInt RW) then () else error("Indice debe ser entero",nl)
-	        in  case tv of
-	            TArray (t,_) => {exp=(), ty=t}
-	            | _ => error("Indexando algo que no es un arreglo", nl) end
+            val _ = if tiposIguales te (TInt RW) then () else error("Indice debe ser entero",nl)
+	            in  case tv of
+	                     TArray (t,_) => {exp=(), ty=(!t)}
+	                     | _ => error("Indexando algo que no es un arreglo", nl) end
         in trexp end
 (* CODIGO VIEJO: Como trdec toma venv y tenv no deberiamos ponerla adentro de transExp y deberiamos llamarla transDec *)
 (* trdec (venv, tenv) (VarDec ({name,escape,typ=NONE,init},pos)) = 
@@ -259,6 +261,7 @@ fun transExp(venv, tenv) =
 and transDec(tenv,venv,el,[]) = (tenv,venv,el)
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=NONE, init},nl))::t) =
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
+            val _ = if tyi = TNil then error(" inicializando la variable "^name^" con nil sin estar tipada",nl) else ()
             val venv' = tabRInserta(name, Var {ty=tyi}, venv)
             in transDec(tenv,venv',el,t) end
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=SOME syty, init},nl))::t) =
@@ -282,15 +285,25 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
             val argsNombres = map ((map #name) o #params o #1) lf
             val argsTipos = map ( fn(func, nl) => procField (#params func) nl ) lf
             val retTipo = map (  fn(func,nl) => Option.getOpt(Option.map (searchTy nl) (#result func),TUnit)  ) lf
-            val venvWithFuncs =  List.foldl (   fn((fname,(argT, retT)),v) => tabRInserta(fname,Func {level=(), label="", formals=argT, result=retT,extern=false},v)   ) venv (ListPair.zip(funcName,ListPair.zip(argsTipos, retTipo)))
+            val venvWithFuncs =  List.foldl (   fn((fname,(argT, retT)),v) => tabRInserta(fname,Func {level=(), label="", formals=argT, result=retT,extern=false},v)   ) venv (ListPair.zip(funcName,ListPair.zip(argsTipos, retTipo)))            
             val funcsArgsTipos = map ListPair.zip (ListPair.zip(argsTipos,argsNombres))
-            val funcvEnvs = map (foldl (fn((argT,argN),v)=>tabRInserta(argN, Var {ty=argT}, venv)) venvWithFuncs) funcsArgsTipos
+            val funcvEnvs = map (foldl (fn((argT,argN),v)=>tabRInserta(argN, Var {ty=argT}, v)) venvWithFuncs) funcsArgsTipos
             val nlS = map #2 lf
             val funcBodies = map (#body o #1) lf
             val funcsTrans =  map (fn(fEnv,fBody) => transExp(fEnv,tenv) fBody) (ListPair.zip(funcvEnvs,funcBodies))
             val _ = List.app (  fn(nl,(retT,fTy)) => if tiposIguales retT fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl)) ) (ListPair.zip(nlS,ListPair.zip(retTipo,map #ty funcsTrans))) 
         in transDec(tenv,venvWithFuncs,el,t) end
-    | transDec(tenv,venv,el,_) = raise Fail "TODO"
+    | transDec(tenv, venv, el, (TypeDec lt)::t) = 
+        let 
+            val tiposName = map (#name o #1) lt
+            val ocurrenciasNombres = List.map (fn(x) => List.length (List.filter (fn(y)=>y=x) tiposName)) tiposName
+            val _ = List.foldl (  fn(x,y)=> if x=1 then y+1 else error("Nombres de tipos repetidos en el mismo batch", #2 (List.nth(lt,y)) )  ) 0 ocurrenciasNombres  (* chequeo que no haya nombres repetido, hay un foldl para llevar un recuento del índice y acceder al número de línea *)            
+            val tenv' = tigertopsort.fijaTipos (map (#1) lt) tenv
+                handle noExiste => raise Fail ("Error: tipo inexistente en el batch")
+                handle Ciclo => raise Fail ("Error: hay un ciclo") (*no funciona!*)
+            in transDec(tenv', venv, el, t) end	       
+   
+   
 (* TEST var x := while ... 
 *)
 

@@ -1,10 +1,11 @@
 # Unix makefile for tigermain example
 
-LUGAR = Facultad
+LUGAR = Mariano
 
 ifeq ($(LUGAR),Facultad)
 # Facultad
 HOME=/home/alumno
+
 MOSMLHOME=${HOME}/mosml
 MOSMLBIN=$(MOSMLHOME)/bin
 MOSMLTOOLS=$(MOSMLBIN)/camlrunm $(MOSMLHOME)/tools
@@ -21,6 +22,18 @@ MOSMLLEX=mosmllex
 MOSMLYACC=mosmlyac -v
 MOSMLC=mosmlc -c -liberal
 MOSMLL=mosmlc
+endif
+
+ifeq ($(LUGAR),Margarita)
+#Margarita
+HOME=/home/margy/Escritorio/Compiladores
+MOSMLHOME=${HOME}/mosml
+MOSMLBIN=$(MOSMLHOME)/bin
+MOSMLTOOLS=$(MOSMLBIN)/camlrunm $(MOSMLHOME)/tools
+MOSMLLEX=$(MOSMLBIN)/mosmllex
+MOSMLYACC=$(MOSMLBIN)/mosmlyac -v
+MOSMLC=$(MOSMLBIN)/mosmlc -c -liberal
+MOSMLL=$(MOSMLBIN)/mosmlc
 endif
 
 GCC=gcc
@@ -42,7 +55,7 @@ EXEFILE=
 
 GRALOBJS= tigerabs.uo tigergrm.uo tigerlex.uo tigermain.uo \
 	tigernlin.uo tigerpp.uo tigerescap.uo tigertab.uo tigertemp.uo topsort.uo \
-	tigertips.uo tigerseman.uo
+	tigertips.uo tigerseman.uo tigertopsort.uo tigermuestratipos.uo tigerpp.uo
 
 all: tiger
 
@@ -81,21 +94,22 @@ depend: tigerabs.sml tigergrm.sml tigerlex.sml tigermain.sml \
 	$(MOSMLTOOLS)/mosmldep >> Makefile
 
 ### DO NOT DELETE THIS LINE
-tigerpp.uo: tigertab.ui tigertips.uo tigerabs.uo 
 tigermuestratipos.ui: tigertips.uo 
-tigertemp.uo: tigertemp.ui 
-tigertab.uo: tigertab.ui 
-tigersres.uo: tigertab.ui tigertips.uo tigertemp.ui tigerabs.uo 
-tigerlex.uo: tigergrm.ui tigernlin.uo 
-tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigerabs.uo 
-tigermuestratipos.uo: tigermuestratipos.ui tigertips.uo 
-tigerescap.ui: tigerabs.uo 
-tigergrm.ui: tigerabs.uo 
-tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
 tigerescap.uo: tigerescap.ui tigertab.ui tigerabs.uo 
+tigergrm.ui: tigerabs.uo 
+tigertemp.uo: tigertemp.ui 
+tigerlex.uo: tigergrm.ui tigernlin.uo 
 tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo 
-tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigerlex.uo \
-    tigerpp.uo 
+tigersres.uo: tigertab.ui tigertips.uo tigertemp.ui tigerabs.uo 
+tigermuestratipos.uo: tigermuestratipos.ui tigertips.uo 
+tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
 tigerseman.ui: tigerabs.uo 
+tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigertopsort.ui \
+    tigerabs.uo tigerpp.uo 
+tigerpp.uo: tigersres.uo tigertab.ui tigertips.uo tigerabs.uo 
 tigertopsort.uo: tigertopsort.ui tigertab.ui tigertips.uo tigerabs.uo \
     tigermuestratipos.ui 
+tigerescap.ui: tigerabs.uo 
+tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigerlex.uo \
+    tigerpp.uo 
+tigertab.uo: tigertab.ui 
