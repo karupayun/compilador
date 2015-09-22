@@ -38,6 +38,8 @@ val tab_vars : (string, EnvEntry) Tabla = tabInserList(
 		formals=[TInt RW], result=TUnit, extern=true})
 	])
 
+fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
+
 fun tiposIguales (TInt _) (TInt _) = true
   | tiposIguales (TRecord _) TNil = true
   | tiposIguales TNil (TRecord _) = true 
@@ -59,18 +61,18 @@ fun tiposIguales (TInt _) (TInt _) = true
 		(* in *)
 		(* 	tiposIguales a b *)
 		(* end *)raise Fail "No debería pasar! (1)"
-  | tiposIguales a b = (a=b)
+  | tiposIguales a b = (a=b)  (* ERROR: Nos estamos comiendo el caso de TNil y TNil, es necesaria esta comparación por igualdad? *)
 
-fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
-fun transExp(venv, tenv) =
-	let fun cmptipo t1 t2 nl = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
+fun cmptipo t1 t2 nl = (* Compara dos tipos, devolviendo uno si son iguales o error si son incomparables *)
 			case (tiposIguales t1 t2) of
 					false => error ("Tipos no comparables", nl)
 				|	true => (case t1 of 
 								(TInt _) => (TInt RW)
 							|	TNil	 => t2
 							|	_		 => t1)	
-		fun trexp(VarExp v) = trvar(v)
+
+fun transExp(venv, tenv) =
+	let	fun trexp(VarExp v) = trvar(v)
 		| trexp(UnitExp _) = {exp=(), ty=TUnit}
 		| trexp(NilExp _)= {exp=(), ty=TNil}
 		| trexp(IntExp(i, _)) = {exp=(), ty=TInt RW}
@@ -117,8 +119,10 @@ fun transExp(venv, tenv) =
 						| LeOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
 						| GtOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
 						| GeOp => if tiposIguales tyl (TInt RW) orelse tiposIguales tyl TString then {exp=(),ty=TInt RW} else error("Error de tipos", nl)
-						| _ => raise Fail "No debería pasar! (3)"
-				else error("Error de tipos", nl)
+						| EqOp => {exp=(),ty=TInt RW} (* Pablo: No estaban, las agregué *)
+						| NeOp => {exp=(),ty=TInt RW} 
+						| _ => raise Fail "No debería pasar! (3)" 
+				else error("La operación tiene tipos distintos", nl)
 			end
 		| trexp(RecordExp({fields, typ}, nl)) =
 			let
@@ -200,13 +204,11 @@ fun transExp(venv, tenv) =
 			end
 		| trexp(LetExp({decs, body}, _)) =
 			let
-				val (tenv', venv', _(*ef. lat. de cod. intermedio*)) = transDec(tenv,venv,[],decs)
+				val (tenv', venv', _(*ef. lat. de cod. intermedio*)) = transDec(tenv,venv,[],decs) (* DUDATEMP: No entender la lista vacía *)
 				val {exp,ty=tybody}=transExp(venv', tenv') body
 			in
 				{exp=(), ty=tybody}
-			end
-			
-			
+			end			
 		| trexp(BreakExp nl) =
 			{exp=(), ty=TUnit}
 		| trexp(ArrayExp({typ, size, init}, nl)) =
@@ -232,7 +234,7 @@ fun transExp(venv, tenv) =
 	            val {exp=expv, ty=tyv} = trvar(v,nl)
 	            val t = ( case tyv of
 	                         TRecord (l,_) => ( case List.filter (fn x => #1x = s ) l of
-	                                             [] => error("Record no tiene campo"^s,nl)
+	                                             [] => error("Record no tiene campo "^s,nl)
 	                                             | (e::_) => #2e )
 	                         | _ => error("No se puede indexar porque no es Record",nl) )
 	            in {exp=(), ty=t} end
@@ -240,10 +242,10 @@ fun transExp(venv, tenv) =
 	        let
 	            val {exp=expe, ty=te} = trexp e
 	            val {exp=expv, ty=tv} = trvar(v,nl)
-            val _ = if tiposIguales te (TInt RW) then () else error("Indice debe ser entero",nl)
-	            in  case tv of
-	                     TArray (t,_) => {exp=(), ty=t}
-	                     | _ => error("Indexando algo que no es un arreglo", nl) end
+				val _ = if tiposIguales te (TInt RW) then () else error("Indice debe ser entero",nl)
+	        in  case tv of
+	            TArray (t,_) => {exp=(), ty=t}
+	            | _ => error("Indexando algo que no es un arreglo", nl) end
         in trexp end
 (* CODIGO VIEJO: Como trdec toma venv y tenv no deberiamos ponerla adentro de transExp y deberiamos llamarla transDec *)
 (* trdec (venv, tenv) (VarDec ({name,escape,typ=NONE,init},pos)) = 

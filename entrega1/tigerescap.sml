@@ -34,16 +34,16 @@ and travExp env d s =
 	| IfExp({test, then', else'=SOME e}, _) =>
 		(travExp env d test; travExp env d then'; travExp env d e)
 	| WhileExp({test, body}, _) =>
-		(travExp env d test; travExp env d body) (* ok *)
+		(travExp env d test; travExp env d body) 
 	| ForExp({var, escape, lo, hi, body}, _) =>
-		let	val env' = tabRInserta(var, (d, escape), env); (* DUDA: Se puede definir una función dentro de un FOR? *)
+		let	val env' = tabRInserta(var, (d, escape), env); 
 		in	travExp env d  lo;
 			travExp env d  hi;
 			travExp env' d  body
 		end
 	| LetExp({decs, body}, _) =>
 		travExp (travDecs env d decs) d body
-	| ArrayExp({typ, size, init}, _) => (travExp env d init ; travExp env d size) (* DUDA: No entiendo estas expresiones. ¿¿a[5] es una arrayExp?? *)
+	| ArrayExp({typ, size, init}, _) => (travExp env d init ; travExp env d size) 
 	| _ => ()
 and travDecs env d [] = env
 | travDecs env d (s::t) =
