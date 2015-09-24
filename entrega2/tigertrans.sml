@@ -1,3 +1,6 @@
+(*completar traduccion de expresiones del AST a tree.stm o tree.exp. En gral, tigertrans no conoce la maquina de destino,
+pero si el lenguaje fuente*)
+
 structure tigertrans :> tigertrans = struct
 
 open tigerframe
@@ -56,23 +59,28 @@ fun unEx (Ex e) = e
 fun unNx (Ex e) = EXP e
 	| unNx (Nx s) = s
 	| unNx (Cx cf) =
-	let
+	(*	let
 		val t = newlabel()
 		val f = newlabel()
 	in
 		seq [cf(t,f),
 			LABEL t,
-			LABEL f]
+			LABEL f]	
 	end
+	se puede hacer con un solo label:
+	*)
+	let 
+	    val l = newlabel()
+	    in seq[cf(l,l), LABEL l]
 
 fun unCx (Nx s) = raise Fail ("Error (UnCx(Nx..))")
 	| unCx (Cx cf) = cf
 	| unCx (Ex (CONST 0)) =
-	(fn (t,f) => JUMP(NAME f, [f]))
+	    (fn (t,f) => JUMP(NAME f, [f]))
 	| unCx (Ex (CONST _)) =
-	(fn (t,f) => JUMP(NAME t, [t]))
+	    (fn (t,f) => JUMP(NAME t, [t]))
 	| unCx (Ex e) =
-	(fn (t,f) => CJUMP(NE, e, CONST 0, t, f))
+	    (fn (t,f) => CJUMP(NE, e, CONST 0, t, f))
 
 fun Ir(e) =
 	let	fun aux(Ex e) = tigerit.tree(EXP e)
@@ -138,13 +146,27 @@ fun nilExp() = Ex (CONST 0)
 
 fun intExp i = Ex (CONST i)
 
-fun simpleVar(acc, nivel) =
-	Ex (CONST 0) (*COMPLETAR*)
+fun simpleVar(acc, nivel) =(*nivel de anidamiento, puede estar en otro frame*)
+	case acc of
+	InReg r => Ex(TEMP r)
+	InFrame k => (*k es el offset en el frame*)
+		let fun aux 0 = TEMP fp 
+			| aux n = MEM(BINOP(PLUS,CONST fpPreLev, aux(n-1)))
+		in Ex(MEM(BINOP(PLUS,CONST k,aux(!actualLevel-nivel)))) end
+		(*COMPLETAR*)
 
 fun varDec(acc) = simpleVar(acc, getActualLev())
 
 fun fieldVar(var, field) = 
-	Ex (CONST 0) (*COMPLETAR*)
+	let val r = unEx v
+            val t = newtemp() (*para evaluar r una sola vez*)
+           (*debemos chequear que r no se nil en tiempo de ejecucion*)        
+        in 
+        ESEQ(seq[MOVE(TEMP t,r)
+                EXP(CALL(NAME "_checkNil"[TEMP t])),], (*las funciones que empizan con _ son de runtime*)
+                MEM(BINOP(PLUS,TEMP t, CONST(wSz*f)) (*todos los tipos ocupan lo mismo*)
+        end
+         (*COMPLETAR*)
 
 fun subscriptVar(arr, ind) =
 let
@@ -159,9 +181,23 @@ in
 		MEM(BINOP(PLUS, TEMP ra,
 			BINOP(MUL, TEMP ri, CONST tigerframe.wSz)))))
 end
+(*
+let val t = newtemp()
+	    val ti = newtemp()
+	in 
+	    ESEQ(seq[MOVE(TEMP t, unEx e), 
+		    EXP(CALL(NAME "checkIndex", [TEMP t, TEMP ti])],
+		    MEM(BINOP(PLUS,TEMP t, BINOP(MUL, CONST wSz, TEMP ti)))) (*cuando wSz es pot de 2, se puede optimizar SHL, TEMP ti, log wSz*)
+*)
 
 fun recordExp l =
-	Ex (CONST 0) (*COMPLETAR*)
+(*    (*deben estar ordenados por el numero de secuencia*)
+    Ex(CONST(CALL("_createRecord",(CONST(length fields))::List.map unEx fields)))
+    ó let val t = newtemp()
+    in Ex(ESEQ(MOVE(TEMP t, CALL("_createRecord",...)), TEMP t)) end
+*)
+    
+	 (*COMPLETAR*)
 
 fun arrayExp{size, init} =
 let
@@ -171,14 +207,43 @@ in
 	Ex (externalCall("allocArray", [s, i]))
 end
 
-fun callExp (name,external,isproc,lev:level,ls) = 
-	Ex (CONST 0) (*COMPLETAR*)
+(*
+fun arrayExp(exp1, exp2)=
+	let 
+	   val t1 = newtemp()
+	   val t2 = newtemp()
+	in
+	  Ex(ESEQ(Seq[MOVE(TEMP t1, unEx exp1),
+			MOVE(TEMP t2, unEx exp2),
+			MOVE(TEMP t1, CALL(NAME "_createArray",[TEMP t1, TEMP t2]))],
+			TEMP t1))
+			
+SON NECESARIOS ESTOS TEMP?			
+*)
+
+(*fun callExp (name,external,isproc,lev:level,ls) = *)
+fun callExp(name, params) =
+    (* evaluaremos los parámetros de izq a der *)
+    let val params' = List.map unEx params
+        fun paramtmps 0 = []
+            | paramtmps n = (TEMP newtmp())::paramtmps (n-1)
+        val tmpas = if (length params - lenth argregs)<0  then [] else paramtmps (length params - lenth argregs) (* ACÁ HAY QUE ARREGLAR EL CASO NEGATIVO *)
+        fun carga l [] = l
+            | carga (arg::t) (temp::s) = ( MOVE(temp,arg) )::carga t s
+        fun pzip l [] = List.map (fn(x) => (x,NONE)) l
+        |    pzip [] _ = []
+        |   pzip (h::t) (r::s) = (h,SOME r)::pzip t s
+        fun empareja = pzip params' (argregs @ tmpas)
+        val enstack = List.filter (fn(_,NONE) => True | _ => False) empareja
 
 fun letExp ([], body) = Ex (unEx body)
  |  letExp (inits, body) = Ex (ESEQ(seq inits,unEx body))
 
 fun breakExp() = 
-	Ex (CONST 0) (*COMPLETAR*)
+	let val l = topsalida()
+    in
+        Nx(JUMP(NAME l,[l]))
+    end
 
 fun seqExp ([]:exp list) = Nx (EXP(CONST 0))
 	| seqExp (exps:exp list) =
@@ -205,22 +270,61 @@ let
 	val expb = unNx body
 	val (l1, l2, l3) = (newlabel(), newlabel(), topSalida())
 in
-	Nx (seq[LABEL l1,
-		cf(l2,l3),
-		LABEL l2,
-		expb,
+	Nx (seq[LABEL l1, cf(l2,l3),
+		LABEL l2, expb,
 		JUMP(NAME l1, [l1]),
 		LABEL l3])
 end
 
 fun forExp {lo, hi, var, body} =
-	Ex (CONST 0) (*COMPLETAR*)
+    let val var' = unEx var 
+	    val (l1,l2,sal) = (newlabel(),newlabel(), topsalida())
+	in Nx(seq(case hi of 
+			Ex(CONST n) => 
+				if n<valOf(Int.minInt) then [MOVE(var', unEx lo),
+							     JUMP(NAME l2, [l2]),
+							     LABEL l1, unNx body,
+							   MOVE(var', BINOP(PLUS, var',CONST 1)),
+								LABEL l2, CJUMP(GT,VAR',CONST n, sal, l1),
+								LABEL sal]
+			       else [MOVE(var', unEx lo),
+				   LABEL l2, CJUMP(GT,VAR',CONST n, sal, l1),
+				   unEx body, LABEL l1,MOVE(var', BINOP(PLUS, var',CONST 1)), 
+				   JUMP(NAME l2, [l2]),	
+				   LABEL sal]
+	
+			| - => let val t = newtemp ()
+			
+		              in [MOVE(var', unEx lo), 
+				  MOVE(TEMP t, unEx hi), (***)	
+				  CJUMP(LE(var',TEMP t, l2,sal),
+				  LABEL l2, unNx body,
+				  CJUMP(EQ, TEMP t, var', sal, l1),
+				  LABEL l1,MOVE(var', BINOP(PLUS, var',CONST 1)), 
+				   JUMP(NAME l2, [l2]),	
+				   LABEL sal]			
+			end))
+	end (*COMPLETAR*)
 
 fun ifThenExp{test, then'} =
-	Ex (CONST 0) (*COMPLETAR*)
+	let val cj = unCx test(*lo desempaquetamos como una condicion*)
+        val(l1,l2) = (newlabel(), newlabel())
+    in
+        Nx(seq[cj(l1,l2),LABEL l1,unNx then', LABEL l2]) (*if sin else no da ningun valor*)
+    end 
 
 fun ifThenElseExp {test,then',else'} =
-	Ex (CONST 0) (*COMPLETAR*)
+	let val cj = unCx test(*lo desempaquetamos como una condicion*)
+        val(l1,l2,l3) = (newlabel(), newlabel(),newlabel())
+        val temp = newtemp()
+    in
+        Ex(ESEQ(seq[
+                cj(l1,l2),
+                LABEL l1, SEQ(MOVE(TEMP tmp, unEx then')),JUMP(LABEL l3,[l3]))
+                LABEL l2, SEQ(MOVE(TEMP tmp, unEx else')),
+                LABEL l3)],
+            TEMP tmp))
+    end
 
 fun ifThenElseExpUnit {test,then',else'} =
 	Ex (CONST 0) (*COMPLETAR*)

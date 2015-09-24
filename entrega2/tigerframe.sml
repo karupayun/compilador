@@ -15,21 +15,26 @@
 		|   localn   |	fp-4*n
 *)
 
+(*
+cosas que dependen de la maquina, ej. cuantos bytes tiene una palabra, donde devuelve una funcion su resultado. En gral, 
+este modulo conoce la maquina de destino pero no el lenguaje fuente.
+*)
+
 structure tigerframe :> tigerframe = struct
 
 open tigertree
 
 type level = int
 
-val fp = "FP"				(* frame pointer *)
-val sp = "SP"				(* stack pointer *)
-val rv = "RV"				(* return value  *)
-val ov = "OV"				(* overflow value (edx en el 386) *)
+val fp = (*string2temp*) "FP"				(* frame pointer *)
+val sp = (*string2temp*) "SP"				(* stack pointer *)
+val rv = (*string2temp*) "RV"			 	(* return value  *)
+val ov = (*string2temp*) "OV"				(* overflow value (edx en el 386) *)
 val wSz = 4					(* word size in bytes *)
 val log2WSz = 2				(* base two logarithm of word size in bytes *)
 val fpPrev = 0				(* offset (bytes) *)
 val fpPrevLev = 8			(* offset (bytes) *)
-val argsInicial = 0			(* words *)
+val argsInicial = 0			(* words *) 
 val argsOffInicial = 0		(* words *)
 val argsGap = wSz			(* bytes *)
 val regInicial = 1			(* reg *)
@@ -43,16 +48,16 @@ val calleesaves = []
 
 type frame = {
 	name: string,
-	formals: bool list,
+	formals: bool list, (*si son escapadas*)
 	locals: bool list,
-	actualArg: int ref,
-	actualLocal: int ref,
+	actualArg: int ref, (*ultimo arg generado*)
+	actualLocal: int ref, (*ultimo local generado*)
 	actualReg: int ref
 }
 type register = string
 datatype access = InFrame of int | InReg of tigertemp.label
-datatype frag = PROC of {body: tigertree.stm, frame: frame}
-	| STRING of tigertemp.label * string
+datatype frag = PROC of {body: tigertree.stm, frame: frame} (*text en assembler*)
+	| STRING of tigertemp.label * string (*data en assembler*)
 fun newFrame{name, formals} = {
 	name=name,
 	formals=formals,
