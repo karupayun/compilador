@@ -26,7 +26,7 @@ val varDec : access -> exp
 val fieldVar : exp * int -> exp
 val subscriptVar : exp * exp -> exp
 val recordExp : (exp * int) list -> exp
-val callExp : tigertemp.label * bool * bool * level * exp list -> exp
+val callExp : tigertemp.label (* bool * bool * level*) * exp list -> exp
 val letExp : tigertree.stm list * exp -> exp
 val breakExp : unit -> exp
 val seqExp : exp list -> exp

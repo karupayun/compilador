@@ -237,7 +237,7 @@ fun ppTab (aPrint:'a->unit) (bPrint:'b->unit) tab = let val l = tabAList tab
                                                         val f = fn ( (a,b),_) => ( aPrint a; print("=") ; bPrint b; print(" ") )
                                                         in foldl f () l end
 val pptenv = ppTab (fn(x)=>print(x)) ppTipo
-fun printenventry(Var {ty}) = ( print("Var ");ppTipo(ty) )
+fun printenventry(Var {ty, ...}) = ( print("Var ");ppTipo(ty) )
   | printenventry(_)=()
 val ppvenv = ppTab (fn(x)=>print(x)) printenventry
 

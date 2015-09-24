@@ -72,7 +72,7 @@ fun unNx (Ex e) = EXP e
 	let 
 	    val l = newlabel()
 	    in seq[cf(l,l), LABEL l]
-
+	end	
 fun unCx (Nx s) = raise Fail ("Error (UnCx(Nx..))")
 	| unCx (Cx cf) = cf
 	| unCx (Ex (CONST 0)) =
@@ -148,25 +148,27 @@ fun intExp i = Ex (CONST i)
 
 fun simpleVar(acc, nivel) =(*nivel de anidamiento, puede estar en otro frame*)
 	case acc of
-	InReg r => Ex(TEMP r)
-	InFrame k => (*k es el offset en el frame*)
-		let fun aux 0 = TEMP fp 
-			| aux n = MEM(BINOP(PLUS,CONST fpPreLev, aux(n-1)))
-		in Ex(MEM(BINOP(PLUS,CONST k,aux(!actualLevel-nivel)))) end
+	    InReg r => Ex(TEMP r)
+	    |InFrame k => (*k es el offset en el frame*)
+		    let fun aux 0 = TEMP fp 
+		    	| aux n = MEM(BINOP(PLUS,CONST fpPrev, aux(n-1)))
+		    in Ex(MEM(BINOP(PLUS,CONST k,aux(!actualLevel-nivel)))) end
 		(*COMPLETAR*)
+
 
 fun varDec(acc) = simpleVar(acc, getActualLev())
 
 fun fieldVar(var, field) = 
-	let val r = unEx v
-            val t = newtemp() (*para evaluar r una sola vez*)
-           (*debemos chequear que r no se nil en tiempo de ejecucion*)        
-        in 
-        ESEQ(seq[MOVE(TEMP t,r)
-                EXP(CALL(NAME "_checkNil"[TEMP t])),], (*las funciones que empizan con _ son de runtime*)
-                MEM(BINOP(PLUS,TEMP t, CONST(wSz*f)) (*todos los tipos ocupan lo mismo*)
-        end
+	let val r = unEx var
+        val t = newtemp() (*para evaluar r una sola vez*)
+           (*debemos chequear que r no sea nil en tiempo de ejecucion*)        
+    in 
+        Ex(ESEQ(seq[MOVE(TEMP t,r),
+                EXP(externalCall( "_checkNil",[TEMP t]))], (*las funciones que empizan con _ son de runtime*)
+                MEM(BINOP(PLUS,TEMP t, CONST(wSz*field))))) (*todos los tipos ocupan lo mismo*)
+    end
          (*COMPLETAR*)
+
 
 fun subscriptVar(arr, ind) =
 let
@@ -181,6 +183,9 @@ in
 		MEM(BINOP(PLUS, TEMP ra,
 			BINOP(MUL, TEMP ri, CONST tigerframe.wSz)))))
 end
+
+
+
 (*
 let val t = newtemp()
 	    val ti = newtemp()
@@ -190,9 +195,9 @@ let val t = newtemp()
 		    MEM(BINOP(PLUS,TEMP t, BINOP(MUL, CONST wSz, TEMP ti)))) (*cuando wSz es pot de 2, se puede optimizar SHL, TEMP ti, log wSz*)
 *)
 
-fun recordExp l =
-(*    (*deben estar ordenados por el numero de secuencia*)
-    Ex(CONST(CALL("_createRecord",(CONST(length fields))::List.map unEx fields)))
+fun recordExp l = Ex(CONST 0)
+    (*deben estar ordenados por el numero de secuencia*)
+    (*Ex(*CONST*)(CALL(NAME "_createRecord",(CONST(length l))::List.map (unEx o #1) l))
     ó let val t = newtemp()
     in Ex(ESEQ(MOVE(TEMP t, CALL("_createRecord",...)), TEMP t)) end
 *)
@@ -222,31 +227,37 @@ SON NECESARIOS ESTOS TEMP?
 *)
 
 (*fun callExp (name,external,isproc,lev:level,ls) = *)
-fun callExp(name, params) =
+fun callExp(name, params) = (*TODO*)
     (* evaluaremos los parámetros de izq a der *)
     let val params' = List.map unEx params
-        fun paramtmps 0 = []
-            | paramtmps n = (TEMP newtmp())::paramtmps (n-1)
-        val tmpas = if (length params - lenth argregs)<0  then [] else paramtmps (length params - lenth argregs) (* ACÁ HAY QUE ARREGLAR EL CASO NEGATIVO *)
+     (*   fun paramtmps 0 = []
+            | paramtmps n = (TEMP (newtemp()))::paramtmps (n-1)
+        val tmpas = if (length params - length argregs)<0  then [] else paramtmps (length params - lenth argregs) (* ACÁ HAY QUE ARREGLAR EL CASO NEGATIVO *) ! Unbound value identifier: argregs (esta definido en tigerframe!!)
+        
         fun carga l [] = l
             | carga (arg::t) (temp::s) = ( MOVE(temp,arg) )::carga t s
         fun pzip l [] = List.map (fn(x) => (x,NONE)) l
         |    pzip [] _ = []
         |   pzip (h::t) (r::s) = (h,SOME r)::pzip t s
-        fun empareja = pzip params' (argregs @ tmpas)
-        val enstack = List.filter (fn(_,NONE) => True | _ => False) empareja
-
+        (*val empareja = pzip params' (argregs @ tmpas) Unbound value identifier: argregs (esta definido en tigerframe!!)*)
+        val enstack = List.filter (fn(_,NONE) => True | _ => False) empareja *)
+(* Luego se puede generar las instrucciones p/cargar en stack (ò mandar los temporarios)
+Finalmente se genera: 
+    CALL(nombre, listadelosparams)
+*)in 
+    	Ex (CONST 0)
+    end
 fun letExp ([], body) = Ex (unEx body)
  |  letExp (inits, body) = Ex (ESEQ(seq inits,unEx body))
 
 fun breakExp() = 
-	let val l = topsalida()
+	let val l = topSalida() 
     in
         Nx(JUMP(NAME l,[l]))
     end
 
 fun seqExp ([]:exp list) = Nx (EXP(CONST 0))
-	| seqExp (exps:exp list) =
+    | seqExp (exps:exp list) =
 		let
 			fun unx [e] = []
 				| unx (s::ss) = (unNx s)::(unx ss)
@@ -265,45 +276,45 @@ fun preWhileForExp() = pushSalida(SOME(newlabel()))
 fun postWhileForExp() = (popSalida(); ())
 
 fun whileExp {test: exp, body: exp, lev:level} =
-let
-	val cf = unCx test
-	val expb = unNx body
-	val (l1, l2, l3) = (newlabel(), newlabel(), topSalida())
-in
-	Nx (seq[LABEL l1, cf(l2,l3),
-		LABEL l2, expb,
-		JUMP(NAME l1, [l1]),
-		LABEL l3])
-end
+    let
+	    val cf = unCx test
+	    val expb = unNx body
+	    val (l1, l2, l3) = (newlabel(), newlabel(), topSalida())
+    in
+	    Nx (seq[LABEL l1, cf(l2,l3),
+		    LABEL l2, expb,
+		    JUMP(NAME l1, [l1]),
+		    LABEL l3])
+    end
 
 fun forExp {lo, hi, var, body} =
     let val var' = unEx var 
-	    val (l1,l2,sal) = (newlabel(),newlabel(), topsalida())
+	    val (l1,l2,sal) = (newlabel(),newlabel(), topSalida())
 	in Nx(seq(case hi of 
 			Ex(CONST n) => 
-				if n<valOf(Int.minInt) then [MOVE(var', unEx lo),
+				if n<valOf(Int.minInt) then [MOVE(var', unEx lo), (*CUANDO PUEDE SER MENOR QUE minINT?*)
 							     JUMP(NAME l2, [l2]),
 							     LABEL l1, unNx body,
 							   MOVE(var', BINOP(PLUS, var',CONST 1)),
-								LABEL l2, CJUMP(GT,VAR',CONST n, sal, l1),
+								LABEL l2, CJUMP(GT,var',CONST n, sal, l1),
 								LABEL sal]
 			       else [MOVE(var', unEx lo),
-				   LABEL l2, CJUMP(GT,VAR',CONST n, sal, l1),
-				   unEx body, LABEL l1,MOVE(var', BINOP(PLUS, var',CONST 1)), 
+				   LABEL l2, CJUMP(GT,var',CONST n, sal, l1),
+				   unNx body, LABEL l1,MOVE(var', BINOP(PLUS, var',CONST 1)), 
 				   JUMP(NAME l2, [l2]),	
 				   LABEL sal]
 	
-			| - => let val t = newtemp ()
+			| _ => [])) (*VER!*)(*let val t = newtemp ()
 			
-		              in [MOVE(var', unEx lo), 
-				  MOVE(TEMP t, unEx hi), (***)	
-				  CJUMP(LE(var',TEMP t, l2,sal),
-				  LABEL l2, unNx body,
-				  CJUMP(EQ, TEMP t, var', sal, l1),
-				  LABEL l1,MOVE(var', BINOP(PLUS, var',CONST 1)), 
-				   JUMP(NAME l2, [l2]),	
-				   LABEL sal]			
-			end))
+		          in [MOVE(var', unEx lo), 
+				    MOVE(TEMP t, unEx hi), (***)	
+				    CJUMP(LE(var',TEMP t, l2,sal),
+				    LABEL l2, unNx body,
+				    CJUMP(EQ, TEMP t, var', sal, l1),
+				    LABEL l1,MOVE(var', BINOP(PLUS, var',CONST 1)), 
+				    JUMP(NAME l2, [l2]),	
+				    LABEL sal)]			
+			end))*)
 	end (*COMPLETAR*)
 
 fun ifThenExp{test, then'} =
@@ -317,25 +328,25 @@ fun ifThenElseExp {test,then',else'} =
 	let val cj = unCx test(*lo desempaquetamos como una condicion*)
         val(l1,l2,l3) = (newlabel(), newlabel(),newlabel())
         val temp = newtemp()
-    in
+    in Ex (CONST 0) (*VER!
         Ex(ESEQ(seq[
                 cj(l1,l2),
-                LABEL l1, SEQ(MOVE(TEMP tmp, unEx then')),JUMP(LABEL l3,[l3]))
+                LABEL l1, SEQ(MOVE(TEMP tmp, unEx then')),JUMP(LABEL l3,[l3]),
                 LABEL l2, SEQ(MOVE(TEMP tmp, unEx else')),
-                LABEL l3)],
-            TEMP tmp))
+                LABEL l3],
+            TEMP tmp))   *)
     end
 
 fun ifThenElseExpUnit {test,then',else'} =
 	Ex (CONST 0) (*COMPLETAR*)
 
 fun assignExp{var, exp} =
-let
-	val v = unEx var
-	val vl = unEx exp
-in
-	Nx (MOVE(v,vl))
-end
+    let
+	    val v = unEx var
+	    val vl = unEx exp
+    in
+	    Nx (MOVE(v,vl))
+    end
 
 fun binOpIntExp {left, oper, right} = 
 	Ex (CONST 0) (*COMPLETAR*)
@@ -346,5 +357,6 @@ fun binOpIntRelExp {left,oper,right} =
 fun binOpStrExp {left,oper,right} =
 	Ex (CONST 0) (*COMPLETAR*)
 
-
 end
+
+
