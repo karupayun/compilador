@@ -1,3 +1,4 @@
+(* Clase laboratorio 23-09 *)
 Segunda etapa: codigo intermedio
 
 AST  ______________________   FRAGMENTOS   ___________  FRAGMENTOS
