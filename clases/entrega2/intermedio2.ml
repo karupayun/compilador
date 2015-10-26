@@ -69,7 +69,7 @@ struct
     val argInicial = 1
     val argDelta = 1 (* 1 palabra *)
     
-Nota: toddas las funciones Tiger recibirán un arg implícito
+Nota: todas las funciones Tiger recibirán un arg implícito
 Esto para resolver el problema del acceso a las variables escapadas.
 El escenario es
     f anida a g anida a h

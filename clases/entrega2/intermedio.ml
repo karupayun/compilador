@@ -7,7 +7,7 @@ Entre otras cosas tendrá info para las variables que usarán las funciones, etc
 
 Siempre podemos hacer esto, excepto que:
 
-1) La variable escapa. Debe estar en la memoria del frame.
+1) La variable escapa. Debe estar en la memoria del frame. (* Duda: Y esto? *)
 2) La variable es un parámetro, y por la convención de llamada del procesador elegido, deba ir en memoria.
 
 Definimo:

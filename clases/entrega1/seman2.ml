@@ -22,7 +22,7 @@ La idea central es que, una vez procesado el batch de declaraciones de tipos, no
 Lo primero será detectar si hay ciclos. Para esto usaremos un sort topológico.
 Def: Dado un conjunto {u1, u2, ... , un} de elementos y un conjunto de pares {(pred,suc)} de la forma (ui,uj), un sort topológico tratará de encontrar una secuencia (no necesariamente única) de
 
-uk1,uk2,...,ukn  tal que , si ∃ (u1,uj) => ki < kj
+uk1,uk2,...,ukn  tal que , si ∃ (ui,uj) => ki < kj
 
 Para facilitar las cosas:
 

@@ -285,7 +285,7 @@ val et = map (fn ({body, ...}) => transExp (tenv,venv',body)) lf
 
 Ahora lo más picante: Declaraciones de tipos.
 
-Recordemos que las declaraciones de tipos vienen en batches, y en un catch pueden ser mutuamente recursivos. No puede haber ciclor. Vamos a detectarlos.
+Recordemos que las declaraciones de tipos vienen en batches, y en un catch pueden ser mutuamente recursivos. No puede haber ciclo. Vamos a detectarlos.
 
 Ej:
 let 
