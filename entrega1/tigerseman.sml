@@ -248,41 +248,41 @@ fun transExp(venv, tenv) =
 and transDec(tenv,venv,el,[]) = (tenv,venv,el)
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=NONE, init},nl))::t) =
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
-            val _ = if tyi = TNil then error(" inicializando la variable "^name^" con nil sin estar tipada",nl) else ()
+            val _ = if tyi = TNil then error(" inicializando la variable "^name^" con nil sin estar tipada",nl) else () 
             val venv' = tabRInserta(name, Var {ty=tyi}, venv)
             in transDec(tenv,venv',el,t) end
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=SOME syty, init},nl))::t) =
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
             val rt = ( case tabBusca(syty,tenv) of
-                       NONE => error("Tipo "^syty^" indefinido",nl) (* TEST: no se puede hacer algo como var x:NIL := nil de alguna forma sucia? *)
+                       NONE => error("Tipo "^syty^" indefinido",nl) (* TEST: no se puede hacer algo como var x:NIL := nil de alguna forma sucia? -> P: Para mi esto se soluciona impidiendo la comparación de TNil TNil *)
                      | SOME tyi' => if tiposIguales tyi' tyi then cmptipo tyi' tyi nl else error("La expresion asignada no es del tipo esperado "^syty,nl) ) (* TEST: Se puede asignar nil a un record? *)
             val venv' = tabRInserta(name, Var {ty=rt}, venv)
             in transDec(tenv,venv',el,t) end
    | transDec(tenv,venv,el, (FunctionDec lf)::t) = 
-	    let fun searchTy nl syty = 
+	    let fun searchTy nl syty = (* Busca un tipo en tenv *)
                     (case tabBusca(syty,tenv) of
                            NONE => error("Tipo "^syty^" indefinido",nl)
                          | SOME ty => ty )
-            fun procField [] _ = []
+            fun procField [] _ = [] (* Cálculo los tipos de una lista de variables *)
                 | procField ({name, escape=_, typ=(NameTy syty)}::xs) nl = (searchTy nl syty) :: (procField xs nl)
                 | procField _ _ = raise Fail "creo que esto no deberia pasar 22!" (* TEST seguro que eso no pasa? *)
-            val funcName = map (#name o #1) lf
-	        val ocurrenciasNombres = List.map (fn(x) => List.length (List.filter (fn(y)=>y=x) funcName)) funcName
-	        val _ = List.foldl (  fn(x,y)=> if x=1 then y+1 else error("Nombres de funciones repetidos en el mismo batch", #2 (List.nth(lf,y)) )  ) 0 ocurrenciasNombres  (* chequeo que no haya nombres repetido, hay un foldl para llevar un recuento del índice y acceder al número de línea *)
-            val argsNombres = map ((map #name) o #params o #1) lf
-            val argsTipos = map ( fn(func, nl) => procField (#params func) nl ) lf
-            val retTipo = map (  fn(func,nl) => Option.getOpt(Option.map (searchTy nl) (#result func),TUnit)  ) lf
-            val venvWithFuncs =  List.foldl (   fn((fname,(argT, retT)),v) => tabRInserta(fname,Func {level=(), label="", formals=argT, result=retT,extern=false},v)   ) venv (ListPair.zip(funcName,ListPair.zip(argsTipos, retTipo)))            
-            val funcsArgsTipos = map ListPair.zip (ListPair.zip(argsTipos,argsNombres))
-            val funcvEnvs = map (foldl (fn((argT,argN),v)=>tabRInserta(argN, Var {ty=argT}, v)) venvWithFuncs) funcsArgsTipos
-            val nlS = map #2 lf
-            val funcBodies = map (#body o #1) lf
-            val funcsTrans =  map (fn(fEnv,fBody) => transExp(fEnv,tenv) fBody) (ListPair.zip(funcvEnvs,funcBodies))
-            val _ = List.app (  fn(nl,(retT,fTy)) => if tiposIguales retT fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl)) ) (ListPair.zip(nlS,ListPair.zip(retTipo,map #ty funcsTrans))) 
-        in transDec(tenv,venvWithFuncs,el,t) end
+            val funcName = map (#name o #1) lf (* Nombres de las funciones *)
+	        val ocurrenciasNombres = List.map (fn(x) => List.length (List.filter (fn(y)=>y=x) funcName)) funcName (* Contador de nombres x función, deberían ser todos 1 *)
+	        val _ = List.foldl (  fn(x,y)=> if x=1 then y+1 else error("Nombres de funciones repetidos en el mismo batch", #2 (List.nth(lf,y)) )  ) 0 ocurrenciasNombres  (* chequeo que no haya nombres repetidos, hay un foldl para llevar un recuento del índice y acceder al número de línea, mediante lf *)
+            val argsNombres = map ((map #name) o #params o #1) lf (* Nombres de los argumentos *)
+            val argsTipos = map ( fn(func, nl) => procField (#params func) nl ) lf (* Una lista de listas de argumentos de lf *)
+            val retTipo = map (  fn(func,nl) => Option.getOpt(Option.map (searchTy nl) (#result func),TUnit)  ) lf (* DUDA: Si a las funciones no les pones un tipo especifico, se supone que son Unit?? *)
+            val venv' =  List.foldl (   fn((fname,(argT, retT)),v) => tabRInserta(fname,Func {level=(), label="", formals=argT, result=retT,extern=false},v)   ) venv (ListPair.zip(funcName,ListPair.zip(argsTipos, retTipo)))            
+            val funcsArgsTipos = map ListPair.zip (ListPair.zip(argsTipos,argsNombres)) (* Devuelve una lista (p/c función) de pares (tipo,nombre) *)
+            val funcvEnvs = map (foldl (fn((argT,argN),v)=>tabRInserta(argN, Var {ty=argT}, v)) venv') funcsArgsTipos (* Para cada función inserta sus (nombres, tipos) en venv' generando una lista de entornos *)
+            val nlS = map #2 lf (* Números de lineas *) 
+            val funcBodies = map (#body o #1) lf (* Cuerpos de funciones *)
+            val funcsTrans =  map (fn(fEnv,fBody) => transExp(fEnv,tenv) fBody) (ListPair.zip(funcvEnvs,funcBodies)) (* Para cada función le aplico transexp al body con su entorno *)
+            val _ = List.app (  fn(nl,(retT,fTy)) => if tiposIguales retT fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl)) ) (ListPair.zip(nlS,ListPair.zip(retTipo,map #ty funcsTrans))) (* me fijo que funquen los tipos *)
+        in transDec(tenv,venv',el,t) end
     | transDec(tenv, venv, el, (TypeDec lt)::t) = 
         let 
-            val tiposName = map (#name o #1) lt
+            val tiposName = map (#name o #1) lt (* Nombres de los tipos *)
             val ocurrenciasNombres = List.map (fn(x) => List.length (List.filter (fn(y)=>y=x) tiposName)) tiposName
             val _ = List.foldl (  fn(x,y)=> if x=1 then y+1 else error("Nombres de tipos repetidos en el mismo batch", #2 (List.nth(lt,y)) )  ) 0 ocurrenciasNombres  (* chequeo que no haya nombres repetido, hay un foldl para llevar un recuento del índice y acceder al número de línea *)            
             val tenv' = tigertopsort.fijaTipos (map (#1) lt) tenv
