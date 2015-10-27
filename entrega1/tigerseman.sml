@@ -219,7 +219,7 @@ fun transExp(venv, tenv) =
                                                   TArray (ta',ur') => (ta',ur')
                                                 | _ => error("El tipo "^typ^" no es un arreglo",nl) )
                                   | _ => error("Tipo "^typ^" no definido",nl) )
-                val _ = if tiposIguales (!ta) tyi then () else error("La expresion inicializadora no es un "^typ,nl)(*no habria que imprimir !ta?*)
+                val _ = if tiposIguales (!ta) tyi then () else error("La expresion inicializadora no es un "^typ,nl)
 			in {exp=(), ty=TArray (ta,ur)} end
 		and trvar(SimpleVar s, nl) =  
 			    ( case tabBusca(s,venv) of
@@ -254,7 +254,7 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=SOME syty, init},nl))::t) =
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
             val rt = ( case tabBusca(syty,tenv) of
-                       NONE => error("Tipo "^syty^" indefinido",nl) (* TEST: no se puede hacer algo como var x:NIL := nil de alguna forma sucia? -> P: Para mi esto se soluciona impidiendo la comparación de TNil TNil *)
+                       NONE => error("Tipo "^syty^" indefinido",nl) 
                      | SOME tyi' => if tiposIguales tyi' tyi then cmptipo tyi' tyi nl else error("La expresion asignada no es del tipo esperado "^syty,nl) ) (* TEST: Se puede asignar nil a un record? *)
             val venv' = tabRInserta(name, Var {ty=rt}, venv)
             in transDec(tenv,venv',el,t) end
@@ -271,10 +271,10 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
 	        val _ = List.foldl (  fn(x,y)=> if x=1 then y+1 else error("Nombres de funciones repetidos en el mismo batch", #2 (List.nth(lf,y)) )  ) 0 ocurrenciasNombres  (* chequeo que no haya nombres repetidos, hay un foldl para llevar un recuento del índice y acceder al número de línea, mediante lf *)
             val argsNombres = map ((map #name) o #params o #1) lf (* Nombres de los argumentos *)
             val argsTipos = map ( fn(func, nl) => procField (#params func) nl ) lf (* Una lista de listas de argumentos de lf *)
-            val retTipo = map (  fn(func,nl) => Option.getOpt(Option.map (searchTy nl) (#result func),TUnit)  ) lf (* DUDA: Si a las funciones no les pones un tipo especifico, se supone que son Unit?? *)
+            val retTipo = map (  fn(func,nl) => Option.getOpt(Option.map (searchTy nl) (#result func),TUnit)  ) lf 
             val venv' =  List.foldl (   fn((fname,(argT, retT)),v) => tabRInserta(fname,Func {level=(), label="", formals=argT, result=retT,extern=false},v)   ) venv (ListPair.zip(funcName,ListPair.zip(argsTipos, retTipo)))            
             val funcsArgsTipos = map ListPair.zip (ListPair.zip(argsTipos,argsNombres)) (* Devuelve una lista (p/c función) de pares (tipo,nombre) *)
-            val funcvEnvs = map (foldl (fn((argT,argN),v)=>tabRInserta(argN, Var {ty=argT}, v)) venv') funcsArgsTipos (* Para cada función inserta sus (nombres, tipos) en venv' generando una lista de entornos *)
+            val funcvEnvs = map (foldl (fn((argT,argN),v)=>tabRInserta(argN, Var {ty=argT}, v)) venv') funcsArgsTipos (* Entornos con las variables de cada función *)
             val nlS = map #2 lf (* Números de lineas *) 
             val funcBodies = map (#body o #1) lf (* Cuerpos de funciones *)
             val funcsTrans =  map (fn(fEnv,fBody) => transExp(fEnv,tenv) fBody) (ListPair.zip(funcvEnvs,funcBodies)) (* Para cada función le aplico transexp al body con su entorno *)

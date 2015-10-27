@@ -14,9 +14,9 @@ struct
 		| SEQ of stm*stm
 		| LABEL of tigertemp.label
 	and binop = PLUS | MINUS | MUL | DIV | AND | OR
-		  | LSHIFT | RSHIFT | ARSHIFT | XOR
+		  | LSHIFT | RSHIFT | ARSHIFT | XOR (*estos ultimos los usamos para optimizar*)
 	and relop = EQ | NE | LT | GT | LE | GE | ULT | ULE
-		  | UGT | UGE
+		  | UGT | UGE (*U:  para comparar punteros o enteros unsigned*)
 
 	fun notRel EQ = NE
 	  | notRel NE = EQ

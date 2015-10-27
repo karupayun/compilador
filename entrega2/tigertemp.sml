@@ -1,7 +1,7 @@
 structure tigertemp :> tigertemp = struct
 type label = string
 type temp = string
-fun makeString s = s (* Duda: Esto habría que modificarlo en un futuro? *)
+fun makeString s = s
 local
 	val i = ref 0
 	val j = ref 0

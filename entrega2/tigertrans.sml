@@ -153,7 +153,7 @@ fun simpleVar(acc, nivel) =(*nivel de anidamiento, puede estar en otro frame*)
 		    let fun aux 0 = TEMP fp 
 		    	| aux n = MEM(BINOP(PLUS,CONST fpPrev, aux(n-1)))
 		    in Ex(MEM(BINOP(PLUS,CONST k,aux(!actualLevel-nivel)))) end
-		(*COMPLETAR*)
+		(*COMPLETAdo*)
 
 
 fun varDec(acc) = simpleVar(acc, getActualLev())
@@ -167,7 +167,7 @@ fun fieldVar(var, field) =
                 EXP(externalCall( "_checkNil",[TEMP t]))], (*las funciones que empizan con _ son de runtime*)
                 MEM(BINOP(PLUS,TEMP t, CONST(wSz*field))))) (*todos los tipos ocupan lo mismo*)
     end
-         (*COMPLETAR*)
+         (*COMPLETAdo*)
 
 
 fun subscriptVar(arr, ind) =
@@ -178,38 +178,30 @@ let
 	val ri = newtemp()
 in
 	Ex( ESEQ(seq[MOVE(TEMP ra, a),
-		MOVE(TEMP ri, i),
-		EXP(externalCall("_checkindex", [TEMP ra, TEMP ri]))],
-		MEM(BINOP(PLUS, TEMP ra,
-			BINOP(MUL, TEMP ri, CONST tigerframe.wSz)))))
+		     MOVE(TEMP ri, i),
+		     EXP(externalCall("_checkIndexArray", [TEMP ra, TEMP ri]))],
+		     MEM(BINOP(PLUS, TEMP ra, BINOP(MUL, TEMP ri, CONST tigerframe.wSz)))))
 end
+(*cuando wSz es pot de 2, se puede optimizar SHL, TEMP ti, log wSz*)
 
 
-
-(*
-let val t = newtemp()
-	    val ti = newtemp()
-	in 
-	    ESEQ(seq[MOVE(TEMP t, unEx e), 
-		    EXP(CALL(NAME "checkIndex", [TEMP t, TEMP ti])],
-		    MEM(BINOP(PLUS,TEMP t, BINOP(MUL, CONST wSz, TEMP ti)))) (*cuando wSz es pot de 2, se puede optimizar SHL, TEMP ti, log wSz*)
-*)
-
-fun recordExp l = Ex(CONST 0)
+fun recordExp l = 
     (*deben estar ordenados por el numero de secuencia*)
-    (*Ex(*CONST*)(CALL(NAME "_createRecord",(CONST(length l))::List.map (unEx o #1) l))
-    ó let val t = newtemp()
-    in Ex(ESEQ(MOVE(TEMP t, CALL("_createRecord",...)), TEMP t)) end
-*)
+    (*let val le = List.map (unEx o (#1)) l*)
+    let val ls = Listsort.sort ( fn(x,y) => Int.compare(#2x, #2y) ) l
+        fun unexp [] = []
+        |    unexp ((e,i)::t) = (unEx e) :: (unexp t)
+    in Ex (externalCall("_allocRecord",(CONST(length ls)):: (unexp ls) ) )
+    end
     
-	 (*COMPLETAR*)
+	 (*COMPLETAdo*)
 
 fun arrayExp{size, init} =
 let
 	val s = unEx size
 	val i = unEx init
 in
-	Ex (externalCall("allocArray", [s, i]))
+	Ex (externalCall("_allocArray", [s, i])) (*tener en cuenta que aca no lo estamos guardando en ningun temporario*)
 end
 
 (*
@@ -218,28 +210,26 @@ fun arrayExp(exp1, exp2)=
 	   val t1 = newtemp()
 	   val t2 = newtemp()
 	in
-	  Ex(ESEQ(Seq[MOVE(TEMP t1, unEx exp1),
+	  Ex(ESEQ(seq[MOVE(TEMP t1, unEx exp1),
 			MOVE(TEMP t2, unEx exp2),
 			MOVE(TEMP t1, CALL(NAME "_createArray",[TEMP t1, TEMP t2]))],
 			TEMP t1))
 			
-SON NECESARIOS ESTOS TEMP?			
 *)
 
 (*fun callExp (name,external,isproc,lev:level,ls) = *)
 fun callExp(name, params) = (*TODO*)
     (* evaluaremos los parámetros de izq a der *)
     let val params' = List.map unEx params
-     (*   fun paramtmps 0 = []
+       fun paramtmps 0 = []
             | paramtmps n = (TEMP (newtemp()))::paramtmps (n-1)
-        val tmpas = if (length params - length argregs)<0  then [] else paramtmps (length params - lenth argregs) (* ACÁ HAY QUE ARREGLAR EL CASO NEGATIVO *) ! Unbound value identifier: argregs (esta definido en tigerframe!!)
-        
-        fun carga l [] = l
-            | carga (arg::t) (temp::s) = ( MOVE(temp,arg) )::carga t s
+        val tmpas = if (length params - length tigerframe.argregs)<0  then [] else paramtmps (length params - length tigerframe.argregs)        
+      (*  fun carga l [] = l
+            | carga (arg::t) (temp::s) = ( MOVE(temp,arg) )::carga t s *)
         fun pzip l [] = List.map (fn(x) => (x,NONE)) l
-        |    pzip [] _ = []
+        |   pzip [] _ = []
         |   pzip (h::t) (r::s) = (h,SOME r)::pzip t s
-        (*val empareja = pzip params' (argregs @ tmpas) Unbound value identifier: argregs (esta definido en tigerframe!!)*)
+       (*  val empareja = pzip params' (tigerframe.argregs @ tmpas)  
         val enstack = List.filter (fn(_,NONE) => True | _ => False) empareja *)
 (* Luego se puede generar las instrucciones p/cargar en stack (ò mandar los temporarios)
 Finalmente se genera: 
@@ -292,30 +282,31 @@ fun forExp {lo, hi, var, body} =
 	    val (l1,l2,sal) = (newlabel(),newlabel(), topSalida())
 	in Nx(seq(case hi of 
 			Ex(CONST n) => 
-				if n<valOf(Int.minInt) then [MOVE(var', unEx lo), (*CUANDO PUEDE SER MENOR QUE minINT?*)
-							     JUMP(NAME l2, [l2]),
-							     LABEL l1, unNx body,
-							   MOVE(var', BINOP(PLUS, var',CONST 1)),
-								LABEL l2, CJUMP(GT,var',CONST n, sal, l1),
-								LABEL sal]
-			       else [MOVE(var', unEx lo),
-				   LABEL l2, CJUMP(GT,var',CONST n, sal, l1),
-				   unNx body, LABEL l1,MOVE(var', BINOP(PLUS, var',CONST 1)), 
-				   JUMP(NAME l2, [l2]),	
-				   LABEL sal]
+				if n<valOf(Int.maxInt) 
+				    then [MOVE(var', unEx lo), 
+				          JUMP(NAME l2, [l2]),
+                				  LABEL l1, unNx body,
+						  MOVE(var', BINOP(PLUS, var',CONST 1)),
+						  LABEL l2, CJUMP(GT,var',CONST n, sal, l1),
+						  LABEL sal]
+			       else [MOVE(var', unEx lo), (*si es maxInt debe ejecutar body al menos una vez*)
+				        LABEL l2,unNx body, CJUMP(EQ,var',CONST n, sal, l1),
+				        LABEL l1,MOVE(var', BINOP(PLUS, var',CONST 1)), 
+				        JUMP(NAME l2, [l2]),	
+				        LABEL sal]
 	
-			| _ => [])) (*VER!*)(*let val t = newtemp ()
-			
-		          in [MOVE(var', unEx lo), 
-				    MOVE(TEMP t, unEx hi), (***)	
-				    CJUMP(LE(var',TEMP t, l2,sal),
+			| _ => 
+			let val t = newtemp ()
+			    in [MOVE(var', unEx lo), 
+				    MOVE(TEMP t, unEx hi), 	
+				    CJUMP(LE,var',TEMP t, l2,sal),
 				    LABEL l2, unNx body,
 				    CJUMP(EQ, TEMP t, var', sal, l1),
 				    LABEL l1,MOVE(var', BINOP(PLUS, var',CONST 1)), 
 				    JUMP(NAME l2, [l2]),	
-				    LABEL sal)]			
-			end))*)
-	end (*COMPLETAR*)
+				    LABEL sal]			
+			    end))
+	end 
 
 fun ifThenExp{test, then'} =
 	let val cj = unCx test(*lo desempaquetamos como una condicion*)
@@ -328,17 +319,24 @@ fun ifThenElseExp {test,then',else'} =
 	let val cj = unCx test(*lo desempaquetamos como una condicion*)
         val(l1,l2,l3) = (newlabel(), newlabel(),newlabel())
         val temp = newtemp()
-    in Ex (CONST 0) (*VER!
+    in
         Ex(ESEQ(seq[
                 cj(l1,l2),
-                LABEL l1, SEQ(MOVE(TEMP tmp, unEx then')),JUMP(LABEL l3,[l3]),
-                LABEL l2, SEQ(MOVE(TEMP tmp, unEx else')),
+                LABEL l1, seq([MOVE(TEMP temp, unEx then'),JUMP(NAME l3,[l3])]),
+                LABEL l2, MOVE(TEMP temp, unEx else'),
                 LABEL l3],
-            TEMP tmp))   *)
+            TEMP temp))   
     end
-
+    
 fun ifThenElseExpUnit {test,then',else'} =
-	Ex (CONST 0) (*COMPLETAR*)
+		let val cj = unCx test(*lo desempaquetamos como una condicion*)
+        val(l1,l2,l3) = (newlabel(), newlabel(),newlabel())
+    in
+        Nx(seq[cj(l1,l2),
+                LABEL l1,seq([unNx then', JUMP(NAME l3, [l3])]), 
+                LABEL l2,unNx else',
+                LABEL l3]) (*if que no da ningun valor*)
+    end  (*COMPLETAdo*)
 
 fun assignExp{var, exp} =
     let
@@ -349,12 +347,45 @@ fun assignExp{var, exp} =
     end
 
 fun binOpIntExp {left, oper, right} = 
-	Ex (CONST 0) (*COMPLETAR*)
+    let val expl = unEx left
+        val expr = unEx right
+        val t = newtemp()
+    in Ex(BINOP( (case oper of
+                    PlusOp => PLUS
+                    | MinusOp => MINUS
+                    | TimesOp => MUL
+                    | DivideOp => DIV 
+                    | _ => raise Fail ("error interno en binOpIntExp!")
+            ), expl, expr) )  end
+	(*COMPLETAdo*)
 
 fun binOpIntRelExp {left,oper,right} =
-	Ex (CONST 0) (*COMPLETAR*)
+    let val expl = unEx left
+        val expr = unEx right
+    in Cx( fn (t, f) => CJUMP( (case oper of
+                    EqOp =>  EQ  
+                    | NeqOp => NE
+                    | LtOp => LT
+                    | LeOp => LE
+                    | GeOp => GE
+                    | GtOp => GT
+                    | _ => raise Fail ("error interno binOpIntRelExp!")
+            ), expl, expr, t, f)) end
+	 (*COMPLETAdo*)
 
-fun binOpStrExp {left,oper,right} =
+fun binOpStrExp {left,oper,right} = (*se compara con una funcion de runtime*)
+	(*let val expl = unEx left
+        val expr = unEx right
+    in Cx( fn (t, f) => CJUMP( (case oper of
+                    EqOp =>  EQ  
+                    | NeqOp => NE
+                    | LtOp => LT
+                    | LeOp => LE
+                    | GeOp => GE
+                    | GtOp => GT
+                    | _ => raise Fail ("error interno binOpIntRelExp!")
+            ), expl, expr, t, f)) end
+	_stringCompare*)
 	Ex (CONST 0) (*COMPLETAR*)
 
 end
