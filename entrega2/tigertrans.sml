@@ -374,7 +374,7 @@ fun binOpIntRelExp {left,oper,right} =
 	 (*COMPLETAdo*)
 
 fun binOpStrExp {left,oper,right} = (*se compara con una funcion de runtime*)
-	(*let val expl = unEx left
+	let val expl = unEx left
         val expr = unEx right
     in Cx( fn (t, f) => CJUMP( (case oper of
                     EqOp =>  EQ  
@@ -384,9 +384,7 @@ fun binOpStrExp {left,oper,right} = (*se compara con una funcion de runtime*)
                     | GeOp => GE
                     | GtOp => GT
                     | _ => raise Fail ("error interno binOpIntRelExp!")
-            ), expl, expr, t, f)) end
-	_stringCompare*)
-	Ex (CONST 0) (*COMPLETAR*)
+            ), externalCall("_stringCompare",[expl, expr]),CONST 0, t, f)) end
 
 end
 

@@ -19,6 +19,15 @@ fun pushLevel l = tigerpila.pushPila levelPila l
 fun popLevel() = tigerpila.popPila levelPila 
 fun topLevel() = tigerpila.topPila levelPila
 
+fun zip3 ([], [], []) = []
+  | zip3 ((b::bs), (c::cs), (d::ds)) = (b,c,d) :: zip3 (bs, cs, ds) 				                    
+  | zip3 _= raise Fail "caca2"
+              
+fun zip5 [] [] [] [] [] = []
+  | zip5 (b::bs) (c::cs) (d::ds) (e::es) (f::fs) = (b,c,d,e,f) :: zip5 bs cs ds es fs
+  | zip5 _ _ _ _ _  = raise Fail "caca"
+           
+
 val tab_tipos : (string, Tipo) Tabla = tabInserList(
 	tabNueva(),
 	[("int", (TInt RW)), ("string", TString)])
@@ -210,7 +219,7 @@ fun transExp(venv, tenv) =
 				val _ = preWhileForExp () (*la llamamos despues de hacer trexp test para que esto ande bien: while (break;1) do ()*)
 				val {exp = be', ty = bt'} = trexp body
 				(*chequeos*)
-				val ev' = whileExp {test = te', body = be', lev = mainLevel (*pongo mainlevel para que el compilador no se queje pero en whileExp no se usa lev. TODO*)}
+				val ev' = whileExp {test = te', body = be', lev = topLevel() (*no se usa lev*)}
 				val _ = postWhileForExp()
 			in
 			    if not (tiposIguales (tt') (TInt RW)) then error("Error de tipo en la condición", nl)
@@ -222,14 +231,15 @@ fun transExp(venv, tenv) =
 			    val {ty = tylo, exp =explo} = trexp lo
 			    val _ = if tiposIguales tyhi (TInt RW) andalso tiposIguales tylo (TInt RW) then ()
 						else error ("Los límites del for deben ser expresiones enteras", nl)
-				(*val venv' = tabRInserta (var, Var {ty = TInt RO, level = getActualLev(), }, venv) (* TEST *) 
-				Ahora Var:  {access : access, level : int, ty : Tipo}*)
+				val vacc = allocLocal (topLevel()) (!escape)		
+				val vlvl = getActualLev()
+				val venv' = tabRInserta (var, Var {ty = TInt RO, access = vacc, level = vlvl}, venv) (* TEST *) 
                 val _ = preWhileForExp()
-				val {ty = tybody, exp = expb} = transExp(venv(*'*), tenv) body
+				val {ty = tybody, exp = expb} = transExp(venv', tenv) body
 				val _ = if tybody <> TUnit then error ("El cuerpo del for debe ser de tipo unit", nl) else ()
                 val _ = postWhileForExp()
 			in
-				{ty = TUnit, exp = unitExp()(*forExp(lo = explo, hi = exphi, var: exp, body = exp)*)} (*TODO*)
+				{ty = TUnit, exp = forExp{lo = explo, hi = exphi, var = simpleVar(vacc, vlvl), body = expb}}
 			end
 		| trexp(LetExp({decs, body}, _)) = (*VER!*)
 		    let fun aux (d, (t, v, exps1)) =
@@ -283,28 +293,25 @@ fun transExp(venv, tenv) =
 	                     TArray (t,_) => {exp=subscriptVar(expv, expe), ty=(!t)}
 	                     | _ => error("Indexando algo que no es un arreglo", nl) end
         in trexp end
-        (*VER EL!*)
-(*TODO transdec *)
+
 and transDec(tenv,venv,el,[]) = (tenv,venv,el)
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=NONE, init},nl))::t) =
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
             val _ = if tyi = TNil then error(" inicializando la variable "^name^" con nil sin estar tipada",nl) else ()
-            (*val venv' = tabRInserta(name, Var {ty=tyi}, venv)*)
-            in transDec(tenv,venv(*'*),el,t) end
+            val venv' = tabRInserta(name, Var {ty=tyi, access = allocLocal (topLevel()) (!escape), level = getActualLev()}, venv)
+            in transDec(tenv,venv',el,t) end
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=SOME syty, init},nl))::t) =
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
             val rt = ( case tabBusca(syty,tenv) of
                        NONE => error("Tipo "^syty^" indefinido",nl) (* TEST: no se puede hacer algo como var x:NIL := nil de alguna forma sucia? *)
                      | SOME tyi' => if tiposIguales tyi' tyi then cmptipo tyi' tyi nl else error("La expresion asignada no es del tipo esperado "^syty,nl) ) (* TEST: Se puede asignar nil a un record? *)
-           (* val venv' = tabRInserta(name, Var {ty=rt}, venv)*)
-            in transDec(tenv,venv(*'*),el,t) end
-   | transDec(tenv,venv,el, (FunctionDec lf)::t) = (* FunctionDec of ({name: symbol, params: field list,
-		result: symbol option, body: exp} * pos) list*)
+           val venv' = tabRInserta(name, Var {ty=rt, access = allocLocal (topLevel()) (!escape), level = getActualLev()}, venv)
+            in transDec(tenv,venv',el,t) end
+   | transDec(tenv,venv,el, (FunctionDec lf)::t) = 
 	    let fun searchTy nl syty = 
                     (case tabBusca(syty,tenv) of
                            NONE => error("Tipo "^syty^" indefinido",nl)
                          | SOME ty => ty )
-         val _ = preFunctionDec()
             val funcName = map (#name o #1) lf
 	        val ocurrenciasNombres = List.map (fn(x) => List.length (List.filter (fn(y)=>y=x) funcName)) funcName
 	        val _ = List.foldl (  fn(x,y)=> if x=1 then y+1 else error("Nombres de funciones repetidos en el mismo batch", #2 (List.nth(lf,y)) )  ) 0 ocurrenciasNombres  (* chequeo que no haya nombres repetido, hay un foldl para llevar un recuento del índice y acceder al número de línea *)
@@ -315,24 +322,26 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
         	   | procField ({name, escape=_, typ=(NameTy syty)}::xs) nl = (searchTy nl syty) :: (procField xs nl)
                | procField _ _ = raise Fail "creo que esto no deberia pasar 22!" (* TEST seguro que eso no pasa? *)
    			val argsTipos = map ( fn(func, nl) => procField (#params func) nl ) lf
-	         val venv' = (let val labels = map (fn({name,...},nl) => tigertemp.newlabel()^" "^name^" "^(Int.toString(nl))) lf (* Etiquetas para debuguear *)
-            				 fun gformals [] = [] (* Agarra una lista de parametros y devuelve una lista de bools diciendo si escapan o no *)
-                               | gformals (x::xs) = (!(#escape x)) :: gformals(xs)     
-                             val formals = map ( fn({params,...}, nl) => gformals params) lf
-                             val levels = map (fn(l,f) => newLevel{parent=topLevel(),name=l ,formals = f }) (ListPair.zip(labels, formals))
-                             val _ = List.app (fn(l)=> pushLevel l) levels
-                             fun zip5 [] [] [] [] [] = []
-                                | zip5 (b::bs) (c::cs) (d::ds) (e::es) (f::fs) = (b,c,d,e,f) :: zip5 bs cs ds es fs 				                    
-				in List.foldl (fn((lab,lev,fname,argT,retT),v) => tabRInserta(fname,Func {level=lev, label=lab, formals=argT, result=retT,extern=false},v)   ) venv (zip5 labels levels funcName argsTipos retTipo)  end)        
-     
-            val funcsArgsTipos = map ListPair.zip (ListPair.zip(argsTipos,argsNombres))
-            val funcvEnvs = map (foldl (fn((argT,argN),v)=>(*tabRInserta(argN, Var {ty=argT}, v)*)v) venv') funcsArgsTipos (* Entornos con las variables de cada función *)
+            val escapes = map ( fn({params,...}, nl) => (map (! o  (#escape)) params)) lf
+            val labels = map (fn({name,...},nl) => tigertemp.newlabel()^" "^name^" "^(Int.toString(nl))) lf (* Etiquetas para debuguear *) 
+		    val levels = map (fn(l,f) => newLevel{parent=topLevel(),name=l ,formals = f }) (ListPair.zip(labels, escapes))	        
+            val venv' =  List.foldl (fn((lab,lev,fname,argT,retT),v) => tabRInserta(fname,Func {level=lev, label=lab, formals=argT, result=retT,extern=false},v)   ) venv (zip5 labels levels funcName argsTipos retTipo)       
+            
+            val funcsArgsTiposEscapes = map zip3 (zip3(argsTipos,argsNombres,escapes))
+            
+            
+            fun procF (argsTiposEscapes, level, nl, body, tRet) = let val _ = preFunctionDec()
+                                                                      val _ = pushLevel level
+                                                                      val myenv = foldl (fn((argT,argN,escape),v)=>(tabRInserta(argN, Var {ty=argT, access=allocArg level escape, level=getActualLev()  }, v))) venv' argsTiposEscapes
+                                                                      val {ty=fTy,...} = transExp(myenv,tenv) body
+                                                                      val _ = if tiposIguales tRet fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl))
+                                                                      val _ = popLevel()
+                                                                      val _ = postFunctionDec()
+                                                                  in () end      
             val nlS = map #2 lf
-            val funcBodies = map (#body o #1) lf
-            val funcsTrans =  map (fn(fEnv,fBody) => transExp(fEnv,tenv) fBody) (ListPair.zip(funcvEnvs,funcBodies))
-            val _ = List.app (  fn(nl,(retT,fTy)) => if tiposIguales retT fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl)) ) (ListPair.zip(nlS,ListPair.zip(retTipo,map #ty funcsTrans))) 
-            val _ = postFunctionDec() 
-        in transDec(tenv,venv',el,t) end
+            val funcBodies = map (#body o #1) lf            
+            val _ = map procF (zip5 funcsArgsTiposEscapes levels nlS funcBodies retTipo)
+         in transDec(tenv,venv',el,t) end
     | transDec(tenv, venv, el, (TypeDec lt)::t) = 
         let 
             val tiposName = map (#name o #1) lt
