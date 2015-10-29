@@ -218,25 +218,29 @@ fun arrayExp(exp1, exp2)=
 *)
 
 (*fun callExp (name,external,isproc,lev:level,ls) = *)
-fun callExp(name, params) = (*TODO*)
+fun callExp(name, extern,isproc,level:level, params) = (*TODO*)
     (* evaluaremos los parámetros de izq a der *)
-    let val params' = List.map unEx params
+    let
+       val staticlink = let fun aux 0 = TEMP fp 
+		    	               | aux n = MEM(BINOP(PLUS,CONST fpPrev, aux(n-1)))
+		                       in aux(getActualLev() - #level level+1) end    
+       val params' =  if (not extern) then staticlink :: (List.map unEx params) else (List.map unEx params)
        fun paramtmps 0 = []
             | paramtmps n = (TEMP (newtemp()))::paramtmps (n-1)
-        val tmpas = if (length params - length tigerframe.argregs)<0  then [] else paramtmps (length params - length tigerframe.argregs)        
-      (*  fun carga l [] = l
-            | carga (arg::t) (temp::s) = ( MOVE(temp,arg) )::carga t s *)
-        fun pzip l [] = List.map (fn(x) => (x,NONE)) l
-        |   pzip [] _ = []
-        |   pzip (h::t) (r::s) = (h,SOME r)::pzip t s
-       (*  val empareja = pzip params' (tigerframe.argregs @ tmpas)  
-        val enstack = List.filter (fn(_,NONE) => True | _ => False) empareja *)
-(* Luego se puede generar las instrucciones p/cargar en stack (ò mandar los temporarios)
+       val tmpas = if (length params - length tigerframe.argregs)<0  then [] else paramtmps (length params - length tigerframe.argregs)        
+       fun carga l [] = (l,[])
+         | carga [] l = raise Fail "esto no deberia pasar jejeje2323"
+         | carga (arg::t) (temp::s) = let val (nocargados,moves) = carga t s in (nocargados,MOVE(temp,arg)::moves) end
+       val argsenreg = (List.map TEMP tigerframe.argregs) @ tmpas
+       val (enstack,moves) = carga params' argsenreg (* asumimos enstack es vacio por ahora *) 
+(* Luego se puede generar las instrucciones p/cargar en stack (ò mandar los temporarios) *)
+(*
 Finalmente se genera: 
     CALL(nombre, listadelosparams)
-*)in 
-    	Ex (CONST 0)
-    end
+*)in  
+       Ex ( ESEQ (seq moves , CALL(NAME name,argsenreg)) ) 
+
+  end
 fun letExp ([], body) = Ex (unEx body)
  |  letExp (inits, body) = Ex (ESEQ(seq inits,unEx body))
 

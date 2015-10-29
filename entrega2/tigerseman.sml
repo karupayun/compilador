@@ -96,9 +96,9 @@ fun transExp(venv, tenv) =
 		| trexp(IntExp(i, _)) = {exp=intExp i, ty=TInt RW}
 		| trexp(StringExp(s, _)) = {exp= stringExp s, ty=TString}
 		| trexp(CallExp ({func,args},nl)) =
-			let val (targs, tresult) = 
+			let val (targs, tresult, flabel, fexterna,flevel) = 
 				case tabBusca (func, venv) of
-					SOME (Func {formals, result, ...}) => (formals, result)
+					SOME (Func {formals, result,label,extern,level}) => (formals, result,label,extern,level)
 				    |	_ => error (func^" no es una función", nl)
                 val largs = List.map trexp args
 				val ltargs = List.map (#ty) largs
@@ -107,8 +107,9 @@ fun transExp(venv, tenv) =
                         else if List.length args < List.length targs then error(func^" argumentos insuficientes",nl) else ()
     		 	val _ = (List.map (fn (x,y) => cmptipo x y nl) (ListPair.zip (ltargs,targs))) 
 			 			(*handle Empty => error ("Número incorrecto de argumentos", nl) (* TEST: Probar este handle *) ListPair.zip no tira excepciones*)
+			 	val isproc = (tresult=TUnit)		
 			in
-				{ty = tresult, exp = callExp(func,leargs)} 
+				{ty = tresult, exp = callExp(flabel,fexterna,isproc,flevel,leargs)} 
 			end
 		| trexp(OpExp({left, oper=EqOp, right}, nl)) =
 			let
@@ -361,8 +362,8 @@ fun transProg ex =
 				LetExp({decs=[FunctionDec[({name="_tigermain", params=[],
 								result=SOME "int", body=ex}, 0)]],
 						body=UnitExp 0}, 0)
-		val _ = transExp(tab_vars, tab_tipos) main
-	in	print "bien!\n" end
+		val {ty,exp} = transExp(tab_vars, tab_tipos) main
+	in	print "allok\n" end
 	
 end
 

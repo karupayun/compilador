@@ -29,6 +29,8 @@ fun main(args) =
 		val expr = prog Tok lexbuf handle _ => errParsing lexbuf
 		val _ = findEscape(expr)
 		val _ = if arbol then tigerpp.exprAst expr else ()
+(*		val exp = transProg(expr)
+		val can = (traceSchedule o basicBlocks o linearize o EXP) exp *)
 	in
 		transProg(expr);
 		print "yes!!\n"
