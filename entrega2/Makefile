@@ -1,6 +1,6 @@
 # Unix makefile for tigermain example
 
-LUGAR = Mariano
+LUGAR = DCC
 
 ifeq ($(LUGAR),Facultad)
 # Facultad
@@ -9,6 +9,19 @@ HOME=/home/alumno
 MOSMLHOME=${HOME}/mosml
 MOSMLBIN=$(MOSMLHOME)/bin
 MOSMLTOOLS=$(MOSMLBIN)/camlrunm $(MOSMLHOME)/tools
+MOSMLLEX=$(MOSMLBIN)/mosmllex
+MOSMLYACC=$(MOSMLBIN)/mosmlyac -v
+MOSMLC=$(MOSMLBIN)/mosmlc -c -liberal
+MOSMLL=$(MOSMLBIN)/mosmlc
+endif
+
+ifeq ($(LUGAR),DCC)
+# DCC
+HOME=/usr/local
+
+MOSMLHOME=${HOME}/lib/mosml
+MOSMLBIN=${HOME}/bin
+MOSMLTOOLS=$(MOSMLBIN)/camlrunm $(HOME)/share/mosml/tools
 MOSMLLEX=$(MOSMLBIN)/mosmllex
 MOSMLYACC=$(MOSMLBIN)/mosmlyac -v
 MOSMLC=$(MOSMLBIN)/mosmlc -c -liberal
@@ -56,7 +69,7 @@ EXEFILE=
 GRALOBJS= tigerabs.uo tigergrm.uo tigerlex.uo tigermain.uo \
 	tigernlin.uo tigerpp.uo tigerescap.uo tigertab.uo tigertemp.uo \
 	tigertips.uo tigerseman.uo tigertopsort.uo tigermuestratipos.uo tigerpp.uo \
-	tigertemp.uo tigertree.uo tigerframe.uo tigertrans.uo tigerit.uo tigerpila.uo
+	tigertemp.uo tigertree.uo tigerframe.uo tigertrans.uo tigerit.uo tigerpila.uo tigercanon.uo
 
 all: tiger
 
@@ -96,35 +109,35 @@ depend: tigerabs.sml tigergrm.sml tigerlex.sml tigermain.sml \
 	$(MOSMLTOOLS)/mosmldep >> Makefile
 
 ### DO NOT DELETE THIS LINE
-tigercanon.uo: tigercanon.ui tigertree.uo tigertab.ui tigertemp.ui 
-tigercanon.ui: tigertree.uo 
-tigerpila.uo: tigerpila.ui 
-tigertemp.uo: tigertemp.ui 
-tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
-tigerframe.ui: tigertree.uo tigertemp.ui 
-tigertrans.uo: tigertrans.ui tigertree.uo tigerpila.ui tigerframe.ui \
-    tigerit.uo tigertemp.ui tigerabs.uo 
-tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigerpila.ui \
-    tigertopsort.ui tigerabs.uo tigertrans.ui tigerpp.uo 
 tigerescap.uo: tigerescap.ui tigertab.ui tigerabs.uo 
-tigertrans.ui: tigertree.uo tigerframe.ui tigertemp.ui tigerabs.uo 
-tigerframe.uo: tigerframe.ui tigertree.uo tigertemp.ui 
-tigergrm.ui: tigerabs.uo 
-tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo 
-tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigerlex.uo \
-    tigerpp.uo 
+tigerpp.uo: tigersres.uo tigertab.ui tigertips.uo tigerabs.uo 
+tigercanon.ui: tigertree.uo 
 tigertopsort.uo: tigertopsort.ui tigertab.ui tigertips.uo tigerabs.uo \
     tigermuestratipos.ui 
-tigerlex.uo: tigergrm.ui tigernlin.uo 
-tigerpp.uo: tigersres.uo tigertab.ui tigertips.uo tigerabs.uo 
-tigerseman.ui: tigerabs.uo 
-tigertree.uo: tigertemp.ui 
-tigermuestratipos.uo: tigermuestratipos.ui tigertips.uo 
-tigermuestratipos.ui: tigertips.uo 
 tigerinterp.uo: tigertree.uo tigertab.ui tigerframe.ui tigerit.uo \
     tigertemp.ui 
+tigerit.uo: tigertree.uo tigertab.ui 
+tigercanon.uo: tigercanon.ui tigertree.uo tigertab.ui tigertemp.ui 
+tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigerframe.ui \
+    tigercanon.ui tigerinterp.uo tigerlex.uo tigertrans.ui tigerpp.uo 
+tigertrans.uo: tigertrans.ui tigertree.uo tigerpila.ui tigerframe.ui \
+    tigerit.uo tigertemp.ui tigerabs.uo 
+tigertrans.ui: tigertree.uo tigerframe.ui tigertemp.ui tigerabs.uo 
+tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
+tigertemp.uo: tigertemp.ui 
+tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigerpila.ui \
+    tigertopsort.ui tigertemp.ui tigerabs.uo tigertrans.ui tigerpp.uo 
+tigerescap.ui: tigerabs.uo 
+tigertab.uo: tigertab.ui 
+tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo 
+tigerlex.uo: tigergrm.ui tigernlin.uo 
+tigerseman.ui: tigerabs.uo 
+tigerframe.ui: tigertree.uo tigertemp.ui 
+tigermuestratipos.ui: tigertips.uo 
+tigermuestratipos.uo: tigermuestratipos.ui tigertips.uo 
 tigersres.uo: tigertab.ui tigertips.uo tigertemp.ui tigerabs.uo \
     tigertrans.ui 
-tigertab.uo: tigertab.ui 
-tigerit.uo: tigertree.uo tigertab.ui 
-tigerescap.ui: tigerabs.uo 
+tigerpila.uo: tigerpila.ui 
+tigertree.uo: tigertemp.ui 
+tigerframe.uo: tigerframe.ui tigertree.uo tigertemp.ui 
+tigergrm.ui: tigerabs.uo 

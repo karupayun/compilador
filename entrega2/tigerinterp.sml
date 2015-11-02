@@ -213,7 +213,7 @@ struct
 		let
 			val str = TextIO.inputLine TextIO.stdIn
 		in
-			storeString str
+			storeString (valOf str)
 		end
 
 		val tabLib: (tigertemp.label, int list -> int) Tabla =
@@ -362,5 +362,5 @@ struct
 			in
 				rv
 			end
-	in (print("Comienzo de ejecución...\n"); evalFun("_tigermain", []); print("Fin de ejecución.\n")) end
+	in (print("Comienzo de ejecución...\n"); evalFun("L0 _tigermain 0", []); print("Fin de ejecución.\n")) end
 end

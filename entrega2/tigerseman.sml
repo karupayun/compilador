@@ -299,15 +299,19 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=NONE, init},nl))::t) =
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
             val _ = if tyi = TNil then error(" inicializando la variable "^name^" con nil sin estar tipada",nl) else ()
-            val venv' = tabRInserta(name, Var {ty=tyi, access = allocLocal (topLevel()) (!escape), level = getActualLev()}, venv)
-            in transDec(tenv,venv',el,t) end
+            val newlocal = allocLocal (topLevel()) (!escape)
+            val venv' = tabRInserta(name, Var {ty=tyi, access = newlocal, level = getActualLev()}, venv)
+            val elateral = varDec(newlocal,expi)
+            in transDec(tenv,venv',elateral::el,t) end
   | transDec(tenv,venv,el, (VarDec ({name, escape, typ=SOME syty, init},nl))::t) =
         let val {exp=expi,ty=tyi} = transExp(venv,tenv) init
             val rt = ( case tabBusca(syty,tenv) of
                        NONE => error("Tipo "^syty^" indefinido",nl) (* TEST: no se puede hacer algo como var x:NIL := nil de alguna forma sucia? *)
                      | SOME tyi' => if tiposIguales tyi' tyi then cmptipo tyi' tyi nl else error("La expresion asignada no es del tipo esperado "^syty,nl) ) (* TEST: Se puede asignar nil a un record? *)
-           val venv' = tabRInserta(name, Var {ty=rt, access = allocLocal (topLevel()) (!escape), level = getActualLev()}, venv)
-            in transDec(tenv,venv',el,t) end
+            val newlocal = allocLocal (topLevel()) (!escape)
+            val venv' = tabRInserta(name, Var {ty=rt, access = newlocal, level = getActualLev()}, venv)
+            val elateral = varDec(newlocal,expi)
+            in transDec(tenv,venv',elateral::el,t) end
    | transDec(tenv,venv,el, (FunctionDec lf)::t) = 
 	    let fun searchTy nl syty = 
                     (case tabBusca(syty,tenv) of
@@ -334,8 +338,9 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
             fun procF (argsTiposEscapes, level, nl, body, tRet) = let val _ = preFunctionDec()
                                                                       val _ = pushLevel level
                                                                       val myenv = foldl (fn((argT,argN,escape),v)=>(tabRInserta(argN, Var {ty=argT, access=allocArg level escape, level=getActualLev()  }, v))) venv' argsTiposEscapes
-                                                                      val {ty=fTy,...} = transExp(myenv,tenv) body
+                                                                      val {ty=fTy,exp=fExp} = transExp(myenv,tenv) body
                                                                       val _ = if tiposIguales tRet fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl))
+                                                                      val _ = functionDec(fExp, topLevel(), tRet=TUnit)
                                                                       val _ = popLevel()
                                                                       val _ = postFunctionDec()
                                                                   in () end      

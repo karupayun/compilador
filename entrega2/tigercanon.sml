@@ -158,4 +158,17 @@ fun traceSchedule(blocks,done) =
        getnext(foldr enterblock (tabNueva()) blocks, blocks)
          @ [LABEL done]
 
+
+fun canonize l = 
+	let 
+		val canon = (traceSchedule o basicBlocks o linearize)
+		fun canon2 [] = []
+		 | 	canon2 (x::xs) =
+			case x of
+				(tigerframe.STRING s) => (tigerframe.CSTRING s)::(canon2 xs)
+				| (tigerframe.PROC {body=tb,frame=fr}) => (tigerframe.CPROC {body=canon tb,frame=fr})::(canon2 xs)
+	in
+		canon2 l
+	end	
+
 end

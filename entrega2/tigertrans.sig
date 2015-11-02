@@ -22,7 +22,7 @@ val nilExp : unit -> exp
 val intExp : int -> exp
 val stringExp : string -> exp
 val simpleVar : access * int -> exp
-val varDec : access -> exp
+val varDec : access * exp -> exp
 val fieldVar : exp * int -> exp
 val subscriptVar : exp * exp -> exp
 val recordExp : (exp * int) list -> exp

@@ -82,6 +82,7 @@ fun unCx (Nx s) = raise Fail ("Error (UnCx(Nx..))")
 	| unCx (Ex e) =
 	    (fn (t,f) => CJUMP(NE, e, CONST 0, t, f))
 
+(* Estas dos son para debug *)
 fun Ir(e) =
 	let	fun aux(Ex e) = tigerit.tree(EXP e)
 		| aux(Nx s) = tigerit.tree(s)
@@ -155,8 +156,6 @@ fun simpleVar(acc, nivel) =(*nivel de anidamiento, puede estar en otro frame*)
 		    in Ex(MEM(BINOP(PLUS,CONST k,aux(!actualLevel-nivel)))) end
 		(*COMPLETAdo*)
 
-
-fun varDec(acc) = simpleVar(acc, getActualLev())
 
 fun fieldVar(var, field) = 
 	let val r = unEx var
@@ -349,6 +348,8 @@ fun assignExp{var, exp} =
     in
 	    Nx (MOVE(v,vl))
     end
+
+fun varDec(acc,expi) = assignExp{var = simpleVar(acc, getActualLev()), exp=expi}
 
 fun binOpIntExp {left, oper, right} = 
     let val expl = unEx left

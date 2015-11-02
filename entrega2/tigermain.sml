@@ -1,6 +1,7 @@
 open tigerlex
 open tigergrm
 open tigerescap
+open tigercanon
 open tigerseman
 open BasicIO Nonstdio
 
@@ -29,10 +30,26 @@ fun main(args) =
 		val expr = prog Tok lexbuf handle _ => errParsing lexbuf
 		val _ = findEscape(expr)
 		val _ = if arbol then tigerpp.exprAst expr else ()
-(*		val exp = transProg(expr)
-		val can = (traceSchedule o basicBlocks o linearize o EXP) exp *)
+		
+		val _ = transProg(expr)
+		
+		val _ = print (tigertrans.Ir(tigertrans.getResult()))
+		
+
+		val fraglist = tigertrans.getResult() (* fragment list *)
+		val canonfraglist = tigercanon.canonize fraglist
+		fun insertl e (ls,rs) = (e::ls,rs)
+		fun insertr e (ls,rs) = (ls,e::rs)
+		fun splitcanon [] = ([],[])
+		| splitcanon (x::xs) = 
+			case x of
+			   (tigerframe.CSTRING s) => insertr s (splitcanon xs)
+			   | (tigerframe.CPROC {body,frame}) => insertl (body, frame) (splitcanon xs)
+					  
+		val (b,c) = splitcanon canonfraglist 
+		val _ = tigerinterp.inter inter b c  
+		
 	in
-		transProg(expr);
 		print "yes!!\n"
 	end	handle Fail s => print("Fail: "^s^"\n")
 

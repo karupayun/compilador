@@ -58,6 +58,8 @@ type register = string
 datatype access = InFrame of int | InReg of tigertemp.label
 datatype frag = PROC of {body: tigertree.stm, frame: frame} (*text en assembler*)
 	| STRING of tigertemp.label * string (*data en assembler*)
+datatype canonfrag = CPROC of {body: tigertree.stm list, frame: frame}
+	| CSTRING of tigertemp.label * string
 fun newFrame{name, formals} = {
 	name=name,
 	formals=formals,
@@ -86,7 +88,7 @@ fun allocLocal (f: frame) b =
 		let	val ret = InFrame(!(#actualLocal f)+localsGap)
 		in	#actualLocal f:=(!(#actualLocal f)-1); ret end
 	| false => InReg(tigertemp.newtemp())
-fun exp(InFrame k) e = MEM(BINOP(PLUS, TEMP(fp), CONST k))
+fun exp(InFrame k) e = MEM(BINOP(PLUS, e, CONST k))
 | exp(InReg l) e = TEMP l
 fun externalCall(s, l) = CALL(NAME s, l)
 
