@@ -237,10 +237,10 @@ fun transExp(venv, tenv) =
 				val venv' = tabRInserta (var, Var {ty = TInt RO, access = vacc, level = vlvl}, venv) (* TEST *) 
                 val _ = preWhileForExp()
 				val {ty = tybody, exp = expb} = transExp(venv', tenv) body
-				val _ = if tybody <> TUnit then error ("El cuerpo del for debe ser de tipo unit", nl) else ()
+				val forexp = if tybody <> TUnit then error ("El cuerpo del for debe ser de tipo unit", nl) else forExp{lo = explo, hi = exphi, var = simpleVar(vacc, vlvl), body = expb}
                 val _ = postWhileForExp()
 			in
-				{ty = TUnit, exp = forExp{lo = explo, hi = exphi, var = simpleVar(vacc, vlvl), body = expb}}
+				{ty = TUnit, exp = forexp}
 			end
 		| trexp(LetExp({decs, body}, _)) = (*VER!*)
 		    let fun aux (d, (t, v, exps1)) =
