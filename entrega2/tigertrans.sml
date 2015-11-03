@@ -122,11 +122,16 @@ fun stringLen s =
 		| aux(_::t) = 1+aux(t)
 	in	aux(explode s) end
 
-fun stringExp(s: string) =
+(*fun stringExp(s: string) = Creo que esta versión que hizo guido está muy ligada al assembler particular y no es lo que pretende hacer el libro, hace que el interprete no imprima bien - Mariano
 	let	val l = newlabel()
 		val len = ".long "^makestring(stringLen s)
 		val str = ".string \""^s^"\""
 		val _ = datosGlobs:=(!datosGlobs @ [STRING(l, len), STRING("", str)])
+	in	Ex(NAME l) end
+*)
+fun stringExp(s: string) =
+	let	val l = newlabel()
+		val _ = datosGlobs:=(!datosGlobs @ [STRING(l, s)])
 	in	Ex(NAME l) end
 fun preFunctionDec() =
 	(pushSalida(NONE);
@@ -226,7 +231,7 @@ fun callExp(name, extern,isproc,level:level, params) = (*TODO*)
        val params' =  if (not extern) then staticlink :: (List.map unEx params) else (List.map unEx params)
        fun paramtmps 0 = []
             | paramtmps n = (TEMP (newtemp()))::paramtmps (n-1)
-       val tmpas = if (length params - length tigerframe.argregs)<0  then [] else paramtmps (length params - length tigerframe.argregs)        
+       val tmpas = if (length params' - length tigerframe.argregs)<0  then [] else paramtmps (length params' - length tigerframe.argregs)        
        fun carga l [] = (l,[])
          | carga [] l = raise Fail "esto no deberia pasar jejeje2323"
          | carga (arg::t) (temp::s) = let val (nocargados,moves) = carga t s in (nocargados,MOVE(temp,arg)::moves) end
@@ -234,9 +239,10 @@ fun callExp(name, extern,isproc,level:level, params) = (*TODO*)
        val (enstack,moves) = carga params' argsenreg (* asumimos enstack es vacio por ahora *) 
 (* Luego se puede generar las instrucciones p/cargar en stack (ò mandar los temporarios) *)
 (*
-Finalmente se genera: 
+Finalmente se genera:
     CALL(nombre, listadelosparams)
 *)in  
+       print(name);print(Int.toString(length(argsenreg)));
        Ex ( ESEQ (seq moves , CALL(NAME name,argsenreg)) ) 
 
   end

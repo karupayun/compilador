@@ -103,6 +103,7 @@ fun transExp(venv, tenv) =
                 val largs = List.map trexp args
 				val ltargs = List.map (#ty) largs
                 val leargs = List.map (#exp) largs 
+				(* val _ = ( print(func) ; print(Int.toString(length(largs))) ) DEBUG *)
                 val _ = if (List.length args) > (List.length targs) then error(func^" demasiados argumentos",nl) 
                         else if List.length args < List.length targs then error(func^" argumentos insuficientes",nl) else ()
     		 	val _ = (List.map (fn (x,y) => cmptipo x y nl) (ListPair.zip (ltargs,targs))) 

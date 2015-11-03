@@ -14,6 +14,7 @@ struct
 	open tigertab
 	open Dynarray
 	open tigertree
+	open tigerit
 
 	fun inter showdebug (funfracs: (stm list*tigerframe.frame) list) (stringfracs: (tigertemp.label*string) list) =
 	let
@@ -150,9 +151,14 @@ struct
 		| stringCompare _ = raise Fail("No debería pasar (stringCompare)")
 
 		fun printFun(strPtr::rest) =
-		let
+		let (* acá un parchecito para que imprima los caracteres escapados - Mariano*)
 			val str = loadString strPtr
-			val _ = print(str)
+            fun hexchar x = let val xv = Char.ord x in if xv>=Char.ord (#"a") andalso xv<=Char.ord (#"a") then xv-Char.ord (#"a")+10 else xv-Char.ord (#"0") end
+            fun aux[] = []
+		      | aux( (#"\\") :: (#"x") ::a1::a2::t) =Char.chr ( hexchar a1 * 16 + hexchar a2 ) :: aux(t)
+		      | aux(x::t) = x::aux(t)
+            val strp = implode(aux(explode str))
+			val _ = print(strp)
 		in
 			0
 		end
@@ -267,6 +273,9 @@ struct
 					| _ => raise Fail("CALL a otra cosa (no implemetado)\n")
 				val eargs = List.map evalExp args
 				(*Si lab es de biblioteca, usar la función de la tabla*)
+				(*val _ = (print(lab);print(Int.toString(length(args)));print("\n")) (*DEBUG Mariano*)
+				val _ = print("\n\n\n\n")
+				val _ = print(tigerit.tree(EXP (List.nth(args,0))))*)
 				val rv = case tabBusca(lab, tabLib) of
 					SOME f => f(eargs)
 					| NONE => evalFun(lab, eargs)
@@ -312,8 +321,7 @@ struct
 			let
 				(* Encontrar la función*)
 				val ffrac = List.filter (fn (body, frame) => tigerframe.name(frame)=f) funfracs
-				val _ = if (List.length(ffrac)<>1) then raise Fail ("No se encuentra la función, o repetida: "^f^"\n") else ()
-				val [(body, frame)] = ffrac
+				val (body,frame) = if (List.length(ffrac)<>1) then raise Fail ("No se encuentra la función, o repetida: "^f^"\n") else hd(ffrac)
 				(* Mostrar qué se está haciendo, si showdebug *)
 				val _ = if showdebug then (print((tigerframe.name frame)^":\n");List.app (print o tigerit.tree) body; print("Argumentos: "); List.app (fn n => (print(Int.toString(n)); print("  "))) args; print("\n")) else ()
 
@@ -349,10 +357,14 @@ struct
 				(* Poner argumentos donde la función los espera *)
 				val formals = map (fn x => tigerframe.exp x (TEMP tigerframe.fp)) (tigerframe.formals frame)
 				val formalsValues = ListPair.zip(formals, args)
+		(*DEBUG Mariano*)
+                val _ = (print(tigerframe.name frame);print("\n"))
+		val _ = List.app (print o tigerit.tree o EXP) formals
 				val _ = map (fn (x,y) => 
 					case x of
 						TEMP t => storeTemp t y
-						| MEM m => storeMem (evalExp m) y) formalsValues
+						| MEM m => storeMem (evalExp m) y
+                        | _ => raise Fail "Error 22.1") formalsValues
 				(* Ejecutar la lista de instrucciones *)
 				val _ = execute body
 				val rv = loadTemp tigerframe.rv

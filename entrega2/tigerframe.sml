@@ -34,10 +34,10 @@ val wSz = 4					(* word size in bytes *)
 val log2WSz = 2				(* base two logarithm of word size in bytes *)
 val fpPrev = 0				(* offset (bytes) *)
 val fpPrevLev = 8			(* offset (bytes) *)
-val argsInicial = 0			(* words *) 
+val argsInicial = 1			(* words *) (*PARCHE*)
 val argsOffInicial = 0		(* words *)
 val argsGap = wSz			(* bytes *)
-val regInicial = 1			(* reg *)
+val regInicial = 1			(* reg *) 
 val localsInicial = 0		(* words *)
 val localsGap = ~4 			(* bytes *)
 val calldefs = [rv]
@@ -70,18 +70,17 @@ fun newFrame{name, formals} = {
 }
 fun name(f: frame) = #name f
 fun string(l, s) = l^tigertemp.makeString(s)^"\n"
-fun formals({formals=f, ...}: frame) = 
-	let	fun aux(n, []) = []
-		| aux(n, h::t) = InFrame(n)::aux(n+argsGap, t)
-	in aux(argsInicial, f) end
+fun formals({formals=f, ...}: frame) = (*PARCHE*)
+	let	fun aux(n, m) = if m=0 then [] else InFrame(n)::aux(n+argsGap, m-1)
+	in aux(argsInicial-1, length f + 1) end
 fun maxRegFrame(f: frame) = !(#actualReg f)
-fun allocArg (f: frame) b = 
+fun allocArg (f: frame) b = (*PARCHE*)
 	case b of
-	true =>
+	_ =>
 		let	val ret = (!(#actualArg f)+argsOffInicial)*wSz
 			val _ = #actualArg f := !(#actualArg f)+1
 		in	InFrame ret end
-	| false => InReg(tigertemp.newtemp())
+	(* | false => InReg(tigertemp.newtemp()) *)
 fun allocLocal (f: frame) b = 
 	case b of
 	true =>
@@ -92,5 +91,7 @@ fun exp(InFrame k) e = MEM(BINOP(PLUS, e, CONST k))
 | exp(InReg l) e = TEMP l
 fun externalCall(s, l) = CALL(NAME s, l)
 
-fun procEntryExit1 (frame,body) = body
+fun procEntryExit1 (frame,body) = 
+   
+   body
 end

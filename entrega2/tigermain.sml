@@ -3,6 +3,7 @@ open tigergrm
 open tigerescap
 open tigercanon
 open tigerseman
+open tigerinterp
 open BasicIO Nonstdio
 
 fun lexstream(is: instream) =
