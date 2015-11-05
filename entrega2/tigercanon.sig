@@ -30,6 +30,6 @@ val basicBlocks :
 *)
 val traceSchedule :
 	tigertree.stm list list * tigertemp.label -> tigertree.stm list
-val canonize : tigerframe.frag list ->tigerframe.canonfrag list
+val canonize : tigerframe.frag list  -> ( (tigertemp.label * string) list  * (tigertree.stm list * tigerframe.frame) list )
 end
 

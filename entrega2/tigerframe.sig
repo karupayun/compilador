@@ -28,6 +28,4 @@ val argregs : register list
 (*val procEntryExit2 : frame * tigerassem.instr list -> tigerassem.instr list*)
 datatype frag = PROC of {body: tigertree.stm, frame: frame}
 	| STRING of tigertemp.label * string
-datatype canonfrag = CPROC of {body: tigertree.stm list, frame: frame}
-	| CSTRING of tigertemp.label * string
 end

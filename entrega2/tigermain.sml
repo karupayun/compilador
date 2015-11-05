@@ -37,20 +37,9 @@ fun main(args) =
 		val _ = transProg(expr)
 		
 		(* val _ = print (tigertrans.Ir(tigertrans.getResult())) *) (* imprime el tree*)
-		
 		val fraglist = tigertrans.getResult() (* fragment list *)
-		val canonfraglist = tigercanon.canonize fraglist
-		fun insertl e (ls,rs) = (e::ls,rs)
-		fun insertr e (ls,rs) = (ls,e::rs)
-		fun splitcanon [] = ([],[])
-		| splitcanon (x::xs) = 
-			case x of
-			   (tigerframe.CSTRING s) => insertr s (splitcanon xs)
-			   | (tigerframe.CPROC {body,frame}) => insertl (body, frame) (splitcanon xs)
-					  
-		val (b,c) = splitcanon canonfraglist 
-		val _ = tigerinterp.inter inter b c  
-		
+		val (c,b) = canonize fraglist
+		val _ = tigerinterp.inter inter b c  (* ARREGLAR *)
 	in
 		print "yes!!\n"
 	end	handle Fail s => print("Fail: "^s^"\n")

@@ -217,9 +217,10 @@ struct
 
 		fun getstrFun(args) = 
 		let
-			val str = TextIO.inputLine TextIO.stdIn
+			val chrr = TextIO.input1 TextIO.stdIn (* aca deberia leer un solo caracter *)
+			val str = Option.map str chrr
 		in
-			storeString (*valOf(str)*) ((getOpt (str,raise Fail("Esto que onda?") )))
+			storeString (valOf(str)) (*(getOpt (str,raise Fail("Esto que onda?") ))*)
 		end
 
 		val tabLib: (tigertemp.label, int list -> int) Tabla =

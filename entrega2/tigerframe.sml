@@ -58,8 +58,6 @@ type register = string
 datatype access = InFrame of int | InReg of tigertemp.label
 datatype frag = PROC of {body: tigertree.stm, frame: frame} (*text en assembler*)
 	| STRING of tigertemp.label * string (*data en assembler*)
-datatype canonfrag = CPROC of {body: tigertree.stm list, frame: frame}
-	| CSTRING of tigertemp.label * string
 fun newFrame{name, formals} = {
 	name=name,
 	formals=formals,

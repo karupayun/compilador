@@ -4,6 +4,7 @@ struct
 open tigertab
 open tigertree
 
+
 fun linearize(stm0: stm) : stm list =
 	let
 		infix %
@@ -158,17 +159,16 @@ fun traceSchedule(blocks,done) =
        getnext(foldr enterblock (tabNueva()) blocks, blocks)
          @ [LABEL done]
 
-
-fun canonize l = 
+fun canonize l =
 	let 
 		val canon = (traceSchedule o basicBlocks o linearize)
-		fun canon2 [] = []
-		 | 	canon2 (x::xs) =
+		fun canon2 [] a b = (a,b)
+		 | 	canon2 (x::xs) a b =
 			case x of
-				(tigerframe.STRING s) => (tigerframe.CSTRING s)::(canon2 xs)
-				| (tigerframe.PROC {body=tb,frame=fr}) => (tigerframe.CPROC {body=canon tb,frame=fr})::(canon2 xs)
+				(tigerframe.STRING s) => (canon2 xs) (s::a) b
+				| (tigerframe.PROC {body=tb,frame=fr}) => (canon2 xs) a ((canon tb,fr)::b)
 	in
-		canon2 l
+		canon2 l [] []
 	end	
 
 end

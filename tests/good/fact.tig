@@ -1,3 +1,6 @@
+(print(concat(getchar(),getchar()));0)
+
+/*
 /* define a recursive function */
 let
   /* calculate n! */
@@ -7,4 +10,4 @@ let
       else n * fact (n - 1)
 in
   fact (10)
-end
+end*/
