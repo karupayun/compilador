@@ -1,7 +1,12 @@
 /* A program to solve the 8-queens problem */
 
 let
-    var N := 8
+
+        function dprintaux (n : int) =
+            if n>=10 then (  dprintaux (n / 10) ; (print (chr(48+n-(n/10)*10))) ) else print( chr(48+n) )
+        function dprint (n : int) =
+            (dprintaux(n);print("\n"))
+    var N := 10
 
     type intArray = array of int
 
@@ -10,24 +15,26 @@ let
     var diag1 := intArray [N+N-1] of 0
     var diag2 := intArray [N+N-1] of 0
 
+    var c:=0
     function printboard () =
+       ( c:=c+1 ;
        (for i := 0 to N-1
 	 do (for j := 0 to N-1
 	      do print (if col[i]=j then " O" else " .");
 	     print ("\n"));
-         print ("\n"))
+         print ("\n")) )
 
     function try (c : int) =
 ( /*  for i := 0 to c do print ("."); print ("\n"); flush ();*/
      if c=N
      then printboard ()
      else for r := 0 to N-1
-	   do if row[r]=0 & diag1[r+c]=0 & diag2[r+7-c]=0
-	           then (row[r] :=1; diag1[r+c] :=1; diag2[r+7-c] :=1;
+	   do if row[r]=0 & diag1[r+c]=0 & diag2[r+N-1-c]=0
+	           then (row[r] :=1; diag1[r+c] :=1; diag2[r+N-1-c] :=1;
 		         col[c] :=r;
 	                 try (c+1);
-			 row[r] :=0; diag1[r+c] :=0; diag2[r+7-c] :=0)
+			 row[r] :=0; diag1[r+c] :=0; diag2[r+N-1-c] :=0)
 
 )
- in try (0); 0
+ in try (0);dprint(c); 0
 end

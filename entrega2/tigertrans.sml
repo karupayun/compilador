@@ -205,7 +205,7 @@ let
 	val s = unEx size
 	val i = unEx init
 in
-	Ex (externalCall("_allocArray", [s, i])) (*tener en cuenta que aca no lo estamos guardando en ningun temporario*)
+	Ex (externalCall("_initArray", [s, i])) (*tener en cuenta que aca no lo estamos guardando en ningun temporario*)
 end
 
 (*
@@ -242,7 +242,7 @@ fun callExp(name, extern,isproc,level:level, params) = (*TODO*)
 Finalmente se genera:
     CALL(nombre, listadelosparams)
 *)in  
-       print(name);print(Int.toString(length(argsenreg)));
+       (* print(name);print(Int.toString(length(argsenreg))); DEBUG Mariano *)
        Ex ( ESEQ (seq moves , CALL(NAME name,argsenreg)) ) 
 
   end

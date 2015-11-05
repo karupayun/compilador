@@ -21,12 +21,14 @@ fun main(args) =
 		val (code, l5)		= arg(l4, "-code") 
 		val (flow, l6)		= arg(l5, "-flow") 
 		val (inter, l7)		= arg(l6, "-inter") 
+
 		val entrada =
 			case l7 of
 			[n] => ((open_in n)
 					handle _ => raise Fail (n^" no existe!"))
 			| [] => std_in
 			| _ => raise Fail "opcio'n dsconocida!"
+		 	
 		val lexbuf = lexstream entrada
 		val expr = prog Tok lexbuf handle _ => errParsing lexbuf
 		val _ = findEscape(expr)
@@ -34,9 +36,8 @@ fun main(args) =
 		
 		val _ = transProg(expr)
 		
-		val _ = print (tigertrans.Ir(tigertrans.getResult()))
+		(* val _ = print (tigertrans.Ir(tigertrans.getResult())) *) (* imprime el tree*)
 		
-
 		val fraglist = tigertrans.getResult() (* fragment list *)
 		val canonfraglist = tigercanon.canonize fraglist
 		fun insertl e (ls,rs) = (e::ls,rs)

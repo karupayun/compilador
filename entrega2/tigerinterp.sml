@@ -219,7 +219,7 @@ struct
 		let
 			val str = TextIO.inputLine TextIO.stdIn
 		in
-			storeString (valOf str)
+			storeString (*valOf(str)*) ((getOpt (str,raise Fail("Esto que onda?") )))
 		end
 
 		val tabLib: (tigertemp.label, int list -> int) Tabla =
@@ -228,7 +228,7 @@ struct
 				("_checkIndexArray", checkIndexArray),
 				("_allocRecord", allocRecord),
 				("_checkNil", checkNil),
-				("_stringcmp", stringCompare),
+				("_stringCompare", stringCompare),
 				("print", printFun),
 				("flush", flushFun),
 				("ord", ordFun),
@@ -358,8 +358,8 @@ struct
 				val formals = map (fn x => tigerframe.exp x (TEMP tigerframe.fp)) (tigerframe.formals frame)
 				val formalsValues = ListPair.zip(formals, args)
 		(*DEBUG Mariano*)
-                val _ = (print(tigerframe.name frame);print("\n"))
-		val _ = List.app (print o tigerit.tree o EXP) formals
+               (* val _ = (print(tigerframe.name frame);print("\n"))
+		val _ = List.app (print o tigerit.tree o EXP) formals *)
 				val _ = map (fn (x,y) => 
 					case x of
 						TEMP t => storeTemp t y

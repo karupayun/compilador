@@ -1,11 +1,11 @@
 (*
 	Frames para el 80386 (sin displays ni registers).
 
-		|    argn    |	fp+4*(n+1)
+		|    argn    |	fp+4*(n+2)
 		|    ...     |
 		|    arg2    |	fp+16
 		|    arg1    |	fp+12
-		|	fp level |  fp+8
+		|  fp level  |  fp+8
 		|  retorno   |	fp+4
 		|   fp ant   |	fp
 		--------------	fp
@@ -34,7 +34,7 @@ val wSz = 4					(* word size in bytes *)
 val log2WSz = 2				(* base two logarithm of word size in bytes *)
 val fpPrev = 0				(* offset (bytes) *)
 val fpPrevLev = 8			(* offset (bytes) *)
-val argsInicial = 1			(* words *) (*PARCHE*)
+val argsInicial = 0			(* words *) (*PARCHE*)
 val argsOffInicial = 0		(* words *)
 val argsGap = wSz			(* bytes *)
 val regInicial = 1			(* reg *) 
@@ -70,11 +70,11 @@ fun newFrame{name, formals} = {
 }
 fun name(f: frame) = #name f
 fun string(l, s) = l^tigertemp.makeString(s)^"\n"
-fun formals({formals=f, ...}: frame) = (*PARCHE*)
+fun formals({actualArg=a, ...}: frame) = 
 	let	fun aux(n, m) = if m=0 then [] else InFrame(n)::aux(n+argsGap, m-1)
-	in aux(argsInicial-1, length f + 1) end
+	in aux(argsInicial, !a) end
 fun maxRegFrame(f: frame) = !(#actualReg f)
-fun allocArg (f: frame) b = (*PARCHE*)
+fun allocArg (f: frame) b = (*PARCHE*) (* Generar un acceso ... *)
 	case b of
 	_ =>
 		let	val ret = (!(#actualArg f)+argsOffInicial)*wSz
