@@ -1,0 +1,26 @@
+Estas son algunas anotaciones en base a la lectura del libro que estoy haciendo. Tiene cosas que está bueno acordarse.
+
+
+Capitulo 6
+newFrame debe:
+-> alocar los parametro de la funcion
+-> implementar el view shift
+
+Un frame guarda los siguientes secretos:
+-> La localizacion de las variables y el acceso
+-> Las instrucciones que implementan el view shift
+-> El label de la funcion
+
+El view shift se encarga por ejemplo de poner el fp = sp y sp = sp - K, guardar fp en memoria, etc
+
+El level (translate) es la abstraccion de un nivel sintactico provisto por translate, cada level posee un frame.
+
+Cosas que creo que están mal hechas:
+-El acces de tigertrans deberia ser un level * frame.acces y VarEntry del enviroment deberia guardar solo un tigertrans.acces.
+-El static link deberia estar implementado a nivel de tigertrans (este es un error muy leve porque seman y trans es solo para separar tareas de type checking y traduccion a codigo intermedio respectivamente) por ejemplo newlebel deberia añadirle el static link en los formals antes de crear el frame. Lo que si sería un error grave sería hacer cosas del static link en frame (ya que esto es una caracteristica del lenguaje tiger, no de la arquitectura).
+
+Capítulo 7
+
+
+
+
