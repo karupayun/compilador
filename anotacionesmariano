@@ -21,6 +21,6 @@ Cosas que creo que están mal hechas:
 
 Capítulo 7
 
-
+MOVE( TEMP/MEM x, _ ) son las unicas opciones válidas. En este caso MEM tiene significado de store y no de fetch. Es por eso que no necesitamos tratar diferentemente l y r values.
 
 

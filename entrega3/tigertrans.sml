@@ -136,7 +136,7 @@ fun stringExp(s: string) =
 fun preFunctionDec() =
 	(pushSalida(NONE);
 	actualLevel := !actualLevel+1)
-fun functionDec(e, l, proc) =
+fun functionDec(e, l, proc) = (* DUDA: por que devuelve un Ex si no se usa para nada? Mariano *)
 	let	val body =
 				if proc then unNx e
 				else MOVE(TEMP rv, unEx e)

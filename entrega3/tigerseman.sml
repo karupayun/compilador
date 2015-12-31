@@ -244,7 +244,7 @@ fun transExp(venv, tenv) =
 				{ty = TUnit, exp = forexp}
 			end
 		| trexp(LetExp({decs, body}, _)) = (*VER!*)
-		    let fun aux (d, (t, v, exps1)) =
+		    let fun aux (d, (t, v, exps1)) = (* DUDA: aca el fold no lo hace ya la funcion transDec? para que esta el foldl mariano *)
 				let
 					val (t', v', exps2) = transDec (t, v,[], [d])
 				in
