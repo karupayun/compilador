@@ -23,4 +23,13 @@ Capítulo 7
 
 MOVE( TEMP/MEM x, _ ) son las unicas opciones válidas. En este caso MEM tiene significado de store y no de fetch. Es por eso que no necesitamos tratar diferentemente l y r values.
 
+Funciones procEntryExit (mi interpretacion):
+procEntryExit: Pone el label de la funcion (de esto creo que deberia encarse la 3). Agrega esto junto al cuerpo de la funcion de datosGlobs. Está declarada en translate y debe ser llamada en Translate.functionDec
+procEntryExit1: Esta declarada en el frame. Hace tareas correspondientes al prologo y epilogo de cada funcion: salvar los argumentos escapados, salvar y restaurar los callee-save registers. Se debe aplicar en Translate.functionDec
+procEntryExit2: Está declarada en frame. Ver pag 208. Agrega una silly instruccion assembler (esto esta en seleccion deinstrucciones) al cuerpo de la funcion para decir que registros están vivos al finalizar la función (calleesaves por ejemplo).
+procEntryExit3: Debería estar declarada en frame. Instrucciones para setear y resetear el stack pointer correctamente a la entrada y salida de cada funcion, colocar las pseudoinstrucciones de inicio y fin, colocar el label de cada funcion y ocuparse de la instruccion de return (ver pag 168 y 261). DUDA: no entiendo muy bien si tambien se deberia encargar del label, que se encarga en realidad procEntryExit.
+
+
+
+
 
