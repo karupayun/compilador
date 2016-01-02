@@ -1,9 +1,9 @@
 structure tigercodegen :> tigercodegen =
 struct
 	
-opentigertree
-opentigerassem
-opentigerframe
+open tigertree
+open tigerassem
+open tigerframe
 
 fun codegen frame stm = (*se aplica a cada funcion*)
     let val ilist = ref ([]:(instr list)) (*lista de instrucciones que va a ir mutando*)
@@ -53,7 +53,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
 *)
 
 (*sacado de la clase de Guido *)
-Si generamos código intermedio de la forma:
+(*Si generamos código intermedio de la forma:
     MOVE (MEM (CONST i), CONST j).
 Se captura con 
     | MOVE (MEM .... ) =>
@@ -61,4 +61,4 @@ Se captura con
     | MOVE (TEMP t1, TEMP t2)
         emit ( MOVE {assem = "MOV 'd0, 's0\n", src = t2, dst=t1})
     | MOE (TEMP t, e) = 
-        emit (MOVE {assem = "MOV 'd0, 's0\n", src = {munchExp e, dst = t}) 
+        emit (MOVE {assem = "MOV 'd0, 's0\n", src = {munchExp e, dst = t}) *) 
