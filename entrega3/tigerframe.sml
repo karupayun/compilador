@@ -26,6 +26,8 @@ open tigertree
 
 type level = int
 
+val rax = "rax"
+val rdx = "rdx"
 val fp = (*string2temp*) "rbp"				(* frame pointer *)
 val sp = (*string2temp*) "rsp"				(* stack pointer *)
 val rv = (*string2temp*) "rax"			 	(* return value  *)
@@ -45,6 +47,8 @@ val specialregs = [rv, fp, sp] (* DUDA: para que sirven estos? mariano *)
 val argregs = ["rdi","rsi","rdx","rcx","r8","r9"] (* registros donde van los primeros argumentos segun la convención de llamada *)
 val callersaves = [] (* registros preservador por el invocador *) (* DUDA: que deberia ir aca? mariano *)
 val calleesaves = ["rbx","rbp","rsp","r10","r15"] (* registros preservador por la funcion invocada *)
+val calldefs = []
+
 
 type frame = {
 	name: string,
@@ -54,6 +58,8 @@ type frame = {
 	actualLocal: int ref, (*ultimo local generado*)
 	actualReg: int ref
 }
+
+
 type register = string
 datatype access = InFrame of int | InReg of tigertemp.label
 datatype frag = PROC of {body: tigertree.stm, frame: frame} (*text en assembler*)

@@ -1,6 +1,6 @@
 # Unix makefile for tigermain example
 
-LUGAR = DCC
+LUGAR = Mariano
 
 ifeq ($(LUGAR),Facultad)
 # Facultad
@@ -127,8 +127,9 @@ tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo
 tigertemp.uo: tigertemp.ui 
 tigertrans.uo: tigertrans.ui tigertree.uo tigerpila.ui tigerframe.ui \
     tigerit.uo tigertemp.ui tigerabs.uo 
-tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigercanon.ui \
-    tigerinterp.uo tigerlex.uo tigertrans.ui tigerpp.uo 
+tigermain.uo: tigerseman.ui tigercodegen.ui tigertree.uo tigerescap.ui \
+    tigergrm.ui tigercanon.ui tigerinterp.uo tigerlex.uo tigertrans.ui \
+    tigerpp.uo 
 tigerinterp.uo: tigertree.uo tigertab.ui tigerframe.ui tigerit.uo \
     tigertemp.ui 
 tigersimpleregalloc.uo: tigersimpleregalloc.ui tigerassem.uo 

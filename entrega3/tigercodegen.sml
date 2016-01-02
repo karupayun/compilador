@@ -6,6 +6,7 @@ val aMOVE = MOVE
 val aLABEL = LABEL
 open tigertree
 open tigerframe
+open tigertemp
 
 fun codegen _ stm = (*se aplica a cada funcion*)
     let val ilist = ref ([]:(instr list)) (*lista de instrucciones que va a ir mutando*)
@@ -14,7 +15,7 @@ fun codegen _ stm = (*se aplica a cada funcion*)
         fun munchStm (SEQ (a,b)) = (munchStm a; munchStm b)
         |   munchStm (MOVE (MEM e1, e2)) = emit(OPER{assem = "movq %'s0, (%'s1)\n", src=[munchExp e2,munchExp e1],dst=[],jump=NONE})
         |   munchStm (MOVE (TEMP i, e2)) = emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e2, dst=i})
-        |   munchStm (LABEL lab)        = emit(aLABEL{assem = (makeString lab) ^ ":\n", src = [], dst = [], jump = NONE}) (* DUDA: esto está bien? el libro hace algo bastaaaaante raro. PAB *)
+        |   munchStm (LABEL lab)        = emit(aLABEL{assem = (makeString lab) ^ ":\n", lab = lab }) (* DUDA: esto está bien? el libro hace algo bastaaaaante raro. PAB *)
         |   munchStm (JUMP (NAME l, [lp])) = if l <> lp then raise Fail "Esto no deberia suceder m33\n" else 
             emit(OPER{assem="jmp 'j0\n", src=[], dst=[], jump=SOME [l]})
         |   munchStm (JUMP _) = raise Fail "Esto no deberia suceder m22\n"
@@ -30,36 +31,31 @@ fun codegen _ stm = (*se aplica a cada funcion*)
                       | salto ULE = "jbe"
                       | salto UGT = "jae"
                 in emit(OPER{assem = "cmpq %'s1, %'s0\n", src=[munchExp e1, munchExp e2], dst= [], jump=NONE}); emit(OPER{assem = (salto rop) ^ " 'j0^\n", src = [], dst = [], jump = SOME [l1,l2]}) end
-        |   munchStm (EXP (CALL (NAME lab,args))) = emit(OPER{assem="call "^(makeString lab)^"\n", src=[munchArgs(0,args)], dst=calldefs, jump=NONE}) (* Lo de lo calldefs me pierde bastante *)
-        |   munchStm (EXP _) = raise Fail "Creemos que esto no deberia suceder (?\n" (*DUDA: puede suceder esto? mariano *)
+ (*       |   munchStm (EXP (CALL (NAME lab,args))) = emit(OPER{assem="call "^(makeString lab)^"\n", src=[munchArgs(0,args)], dst=tigerframe.calldefs, jump=NONE}) (* Lo de lo calldefs me pierde bastante ---> Lo puse en tigerFrame *) TODO*) 
+        |   munchStm (EXP _) = raise Fail "Creemos que esto no deberia suceder ?\n" (*DUDA: puede suceder esto? mariano *)
         |   munchStm _ = raise Fail "Casos no cubiertos en tigercodegen.munchStm" 
-
+(* ML ES UNA PORONGA:        and munchExp (BINOP (CULO, e1, e2)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=r}); emit(OPER{assem = "imulq %'s1, %'d0\n", src = [r, munchExp e2], dst = [r, tigerframe.rdx], jump = NONE}))) 
+        |   munchExp (BINOP (DIV, e1, e2)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=tigerframe.rax} ); emit(OPER{assem = "idivq %'s1\n", src = [tigerframe.rax, munchExp e2], dst = [tigerframe.rax, tigerframe.rdx], jump = NONE}); emit(aMOVE{assem = "movq %'s0, %'d0\n", src=tigerframe.rax, dst=r} ))) 
+        |   munchExp _ = raise Fail "TO DO" *)
         and munchExp (CONST i) = result (fn r => emit(OPER{assem = "movq $"^(Int.toString i)^", %'d0\n", src = [], dst = [r], jump = NONE}))
-        |   munchExp (BINOP (PLUS, CONST i, e1) = (*let val r = munchExp e1
-                                                      val _ = emit(OPER{assem = "add 's0+"^(Int.toString i)^"\n", src = [r], dst = [r], jump = NONE}))
-                                                  in r*)
-                                                    result ( fn r => let val _ = emit(MOVE{assem = "movq %'s0, %'d0\n", src = [munchExp e1], dst=[r]})    
-                                                                        in emit(OPER{assem = "add 's0+"^(Int.toString i)^"\n", src = [r], dst = [r], jump = NONE})) (*el libro dice de hacerlo asi y esperar q dsp a r y munchExp e1 se le asigne el mismo registro, peor no entiendo por q *) 
-        |   munchExp (BINOP (PLUS, e1, CONST i) = result ( fn r => let val _ = emit(MOVE{assem = "movq %'s0, %'d0\n", src=[munchExp e1], dst=[r]})    
-                                                                        in emit(OPER{assem = "add 's0+"^(Int.toString i)^"\n", src = [r], dst = [r], jump = NONE}))
-        |   munchExp (BINOP (PLUS, e1, e2) = result ( fn r => let val _ = emit(MOVE{assem = "movq %'s0, %'d0\n", src=[munchExp e1], dst=[r]})    
-                                                                        in emit(OPER{assem = "add 's0+'s1\n", src = [r, munchExp e2], dst = [r], jump = NONE}))
-        |   munchExp (BINOP (MINUS, CONST i, e1) = result ( fn r => let val _ = emit(MOVE{assem = "movq %'s0, %'d0\n", src=[munchExp e1], dst=[r]})    
-                                                                        in emit(OPER{assem = "sub 's0-"^(Int.toString i)^"\n", src = [r], dst = [r], jump = NONE}))
-        |   munchExp (BINOP (MINUS, e1, CONST i) = result ( fn r => let val _ = emit(MOVE{assem = "movq %'s0, %'d0\n", src=[munchExp e1], dst=[r]})    
-                                                                        in emit(OPER{assem = "sub 's0-"^(Int.toString i)^"\n", src = [r], dst = [r], jump = NONE}))
-        |   munchExp (BINOP (MINUS, e1, e2) = result ( fn r => let val _ = emit(MOVE{assem = "movq %'s0, %'d0\n", src=[munchExp e1], dst=[r]})    
-                                                                        in emit(OPER{assem = "sub 's0-'s1\n", src = [r, munchExp e2], dst = [r], jump = NONE}))
-        |   munchExp (BINOP (TIMES, CONST i, e1) = result ( fn r => let val _ = emit(MOVE{assem = "movq %'s0, %'d0\n", src=[munchExp e1], dst=[tigerframe.eax]})    
-                                                                        val _ = emit(OPER{assem = "mul EAX *"^(Int.toString i)^"\n", src = [], dst = [tigerframe.eax, tigerframe.edx], jump = NONE})
-                                                                     in emit(MOVE{assem = "movq %'s0, %'d0\n", src=[tigerframe.eax], dst=[r]}) )    
-        |   munchExp (BINOP (TIMES, e1, CONST i) = result ( fn r => let val _ = emit(MOVE{assem = "movq %'s0, %'d0\n", src=[munchExp e1], dst=[tigerframe.eax]})    
-                                                                        val _ = emit(OPER{assem = "mul EAX *"^(Int.toString i)^"\n", src = [], dst = [tigerframe.eax, tigerframe.edx], jump = NONE})
-                                                                     in emit(MOVE{assem = "movq %'s0, %'d0\n", src=[tigerframe.eax], dst=[r]}) )
-        |   munchExp (BINOP (TIMES, e1, e2) = result ( fn r => let val _ = emit(MOVE{assem = "movq %'s0, %'d0\n", src=[munchExp e1], dst=[tigerframe.eax]})    
-                                                                        val _ = emit(OPER{assem = "mul EAX * 's0\n", src = [munchExp e2], dst = [tigerframe.eax, tigerframe.edx], jump = NONE})
-                                                                     in emit(MOVE{assem = "movq %'s0, %'d0\n", src=[tigerframe.eax], dst=[r]}) )
-        |   munchExp _ = raise Fail "TO DO"
+        |   munchExp (NAME lab) = result (fn r => emit(OPER{assem = "movq $"^(makeString lab)^", %'d0\n", src = [], dst = [r], jump = NONE})) (* Con Mariano suponemos que esto no puede aparecer pero por si las dudas ... *)
+        |   munchExp (MEM m) = result (fn r => emit(aMOVE{assem = "movq %'s0, %'d0\n", src = munchExp m, dst = r}))
+        |   munchExp (TEMP t) = t 
+        |   munchExp (CALL _) = raise Fail "Este caso CALL no debería aparecer por el canonizar"
+        |   munchExp (ESEQ _) = raise Fail "Este caso ESEQ no debería aparecer por el canonizar"
+        |   munchExp (BINOP (PLUS, CONST i, e1)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src = munchExp e1, dst=r}); emit(OPER{assem = "addq $"^(Int.toString i)^", %'d0\n", src = [r], dst = [r], jump = NONE}))) (*el libro dice de hacerlo asi y esperar q dsp a r y munchExp e1 se le asigne el mismo registro, peor no entiendo por q. RtaZ: Ese move tiene que estar si o si. Después lo de "esperar" tiene que ser algo que hagamos nosotros con el register allocator. De esa forma esa instrucción MOVE puede desaparecer, se entiende? Si nosotros somos cracks la deberíamos hacer desaparecer. *) 
+        |   munchExp (BINOP (PLUS, e1, CONST i)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src = munchExp e1, dst=r}); emit(OPER{assem = "addq $"^(Int.toString i)^", %'d0\n", src = [r], dst = [r], jump = NONE})))
+        |   munchExp (BINOP (PLUS, e1, e2)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=r}); emit(OPER{assem = "addq %'s1, %'d0\n", src = [r, munchExp e2], dst = [r], jump = NONE})))
+        |   munchExp (BINOP (MINUS, CONST i, e1)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src = munchExp e1, dst=r}); emit(OPER{assem = "subq $"^(Int.toString i)^", %'d0\n", src = [r], dst = [r], jump = NONE})))
+        |   munchExp (BINOP (MINUS, e1, CONST i)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src = munchExp e1, dst=r}); emit(OPER{assem = "subq $"^(Int.toString i)^", %'d0\n", src = [r], dst = [r], jump = NONE})))
+        |   munchExp (BINOP (MINUS, e1, e2)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=r}); emit(OPER{assem = "subq %'s1, %'d0\n", src = [r, munchExp e2], dst = [r], jump = NONE})))
+        |   munchExp (BINOP (MUL, CONST i, e1)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=r}); emit(OPER{assem = "imulq $"^(Int.toString i)^", %'d0\n", src = [r], dst = [r, tigerframe.rdx], jump = NONE})))
+        |   munchExp (BINOP (MUL, e1, CONST i)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=r}); emit(OPER{assem = "imulq $"^(Int.toString i)^", %'d0\n", src = [r], dst = [r, tigerframe.rdx], jump = NONE})))
+        |   munchExp (BINOP (MUL, e1, e2)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=r}); emit(OPER{assem = "imulq %'s1, %'d0\n", src = [r, munchExp e2], dst = [r, tigerframe.rdx], jump = NONE}))) 
+        |   munchExp (BINOP (DIV, CONST i, e1)) = result ( fn r => (emit(OPER{assem = "movq $"^(Int.toString i)^", %'d0\n", src=[], dst=[tigerframe.rax], jump = NONE}); emit(OPER{assem = "idivq %s1'\n", src = [tigerframe.rax, munchExp e1], dst = [tigerframe.rax, tigerframe.rdx], jump = NONE}); emit(aMOVE{assem = "movq %'s0, %'d0\n", src=tigerframe.rax, dst=r} )))
+        |   munchExp (BINOP (DIV, e1, CONST i)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=tigerframe.rax} ); emit(OPER{assem = "movq $"^(Int.toString i)^", %'d0\n", src=[], dst=[r], jump = NONE}); emit(OPER{assem = "idivq %'s1\n", src = [tigerframe.rax, r], dst = [tigerframe.rax, tigerframe.rdx], jump = NONE}); emit(aMOVE{assem = "movq %'s0, %'d0\n", src=tigerframe.rax, dst=r} )))
+        |   munchExp (BINOP (DIV, e1, e2)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=tigerframe.rax} ); emit(OPER{assem = "idivq %'s1\n", src = [tigerframe.rax, munchExp e2], dst = [tigerframe.rax, tigerframe.rdx], jump = NONE}); emit(aMOVE{assem = "movq %'s0, %'d0\n", src=tigerframe.rax, dst=r} )))
+        |   munchExp _ = raise Fail "TODO"
         in munchStm stm ; rev(!ilist) end
 
 
