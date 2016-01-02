@@ -1,23 +1,24 @@
 structure tigercodegen :> tigercodegen =
 struct
-	
-open tigertree
+
 open tigerassem
+val aMOVE = MOVE
+val aLABEL = LABEL
+open tigertree
 open tigerframe
 
-fun codegen frame stm = (*se aplica a cada funcion*)
+fun codegen _ stm = (*se aplica a cada funcion*)
     let val ilist = ref ([]:(instr list)) (*lista de instrucciones que va a ir mutando*)
         fun emit x = ilist := x::(!ilist) (*!ilist es equivalente a *ilist en C y ilist := a es equivalente a *ilist = a en C*)
-        fun results gen = let val t = tigertemp.newtemp
-                            in (gen t; t) end
+        fun result gen = let val t = tigertemp.newtemp() in (gen t; t) end
         fun munchStm (SEQ (a,b)) = (munchStm a; munchStm b)
         |   munchStm (MOVE (MEM e1, e2)) = emit(OPER{assem = "movq %'s0, (%'s1)\n", src=[munchExp e2,munchExp e1],dst=[],jump=NONE})
-        |   munchStm (MOVE (TEMP i, e2)) = emit(MOVE{assem = "movq %'s0, %'d0\n", src=munchExp e2, dst=i})
-        |   munchStm (LABEL lab)        = emit(LABEL{assem = lab ^ ":\n", lab = lab})
+        |   munchStm (MOVE (TEMP i, e2)) = emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e2, dst=i})
+        |   munchStm (LABEL lab)        = emit(aLABEL{assem = lab ^ ":\n", lab = lab})
         |   munchStm (JUMP (NAME l, [lp])) = if l <> lp then raise Fail "Esto no deberia suceder m33\n" else 
             emit(OPER{assem="jmp "^(tigertemp.makeString l)^"\n", src=[], dst=[], jump=SOME [l]})
         |   munchStm (JUMP _) = raise Fail "Esto no deberia suceder m22\n"
-        |   munchStm (CJUMP (op, e1, e2, l1, l2)) =
+        |   munchStm (CJUMP (rop, e1, e2, l1, l2)) =
                 let fun salto EQ = "je" 
 	                  | salto NE = "jne"
                       | salto LT = "jl"
@@ -28,15 +29,14 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                       | salto UGE = "ja"
                       | salto ULE = "jbe"
                       | salto UGT = "jae"
-                in emit(OPER{assem = "cmpq %'s1, %'s0\n", src=[munchExp e1, munchExp e2], dst= [], jump=NONE); emit(OPER{assem = (salto op) ^ " " ^(tigertemp.makeString l1)^"\n", src = [], dst = [], jump = SOME [l1,l2]}) end
-        |   munchStm (CJUMP _) = raise Fail "Esto no deberia suceder m23\n"
+                in emit(OPER{assem = "cmpq %'s1, %'s0\n", src=[munchExp e1, munchExp e2], dst= [], jump=NONE}); emit(OPER{assem = (salto rop) ^ " " ^(tigertemp.makeString l1)^"\n", src = [], dst = [], jump = SOME [l1,l2]}) end
+        |   munchStm (EXP (CALL (func,args))) = raise Fail "TODO\n"
         |   munchStm (EXP _) = raise Fail "Creemos que esto no deberia suceder (?\n" (*DUDA: puede suceder esto? mariano *)
+        |   munchStm _ = raise Fail "Casos no cubiertos en tigercodegen.munchStm" 
+
         and munchExp (CONST i) = result (fn r => emit(OPER{assem = "movq $"^(Int.toString i)^", %'d0\n", src = [], dst = [r], jump = NONE}))
-        |   munchExp () =
-        |   munchExp () =
-        |   munchExp () =
-        |   munchExp () =
-          
+        |   munchExp _ = raise Fail "TODO"
+        in munchStm stm ; rev(!ilist) end
 
 
 
@@ -61,4 +61,5 @@ Se captura con
     | MOVE (TEMP t1, TEMP t2)
         emit ( MOVE {assem = "MOV 'd0, 's0\n", src = t2, dst=t1})
     | MOE (TEMP t, e) = 
-        emit (MOVE {assem = "MOV 'd0, 's0\n", src = {munchExp e, dst = t}) *) 
+        emit (MOVE {assem = "MOV 'd0, 's0\n", src = {munchExp e, dst = t}) *)
+end 
