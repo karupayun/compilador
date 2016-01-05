@@ -109,11 +109,7 @@ in
 end
 
 val datosGlobs = ref ([]: frag list)
-fun procEntryExit{level: level, body} =
-	let	val label = STRING(name(#frame level), "")
-		val body' = PROC{frame= #frame level, body=unNx body}
-		val final = STRING(";;-------", "")
-	in	datosGlobs:=(!datosGlobs@[label, body', final]) end
+fun procEntryExit{level: level, body} = ( datosGlobs:=(!datosGlobs@[ PROC{frame= #frame level, body=unNx body} ]) ; () ) 
 fun getResult() = !datosGlobs
 
 fun stringLen s =
@@ -136,13 +132,13 @@ fun stringExp(s: string) =
 fun preFunctionDec() =
 	(pushSalida(NONE);
 	actualLevel := !actualLevel+1)
-fun functionDec(e, l, proc) = (* DUDA: por que devuelve un Ex si no se usa para nada? Mariano *)
+fun functionDec(e, l, proc) =
 	let	val body =
 				if proc then unNx e
 				else MOVE(TEMP rv, unEx e)
 		val body' = procEntryExit1(#frame l, body)
-		val () = procEntryExit{body=Nx body', level=l}
-	in	Ex(CONST 0) end
+    in procEntryExit{body=Nx body', level=l} end
+
 fun postFunctionDec() =
 	(popSalida(); actualLevel := !actualLevel-1)
 
@@ -229,22 +225,10 @@ fun callExp(name, extern,isproc,level:level, params) = (*TODO*)
 		    	               | aux n = MEM(BINOP(PLUS,CONST fpPrev, aux(n-1)))
 		                       in aux(getActualLev() - #level level+1) end    
        val params' =  if (not extern) then staticlink :: (List.map unEx params) else (List.map unEx params)
-       fun paramtmps 0 = []
-            | paramtmps n = (TEMP (newtemp()))::paramtmps (n-1)
-       val tmpas = if (length params' - length tigerframe.argregs)<0  then [] else paramtmps (length params' - length tigerframe.argregs)        
-       fun carga l [] = (l,[])
-         | carga [] l = raise Fail "esto no deberia pasar jejeje2323"
-         | carga (arg::t) (temp::s) = let val (nocargados,moves) = carga t s in (nocargados,MOVE(temp,arg)::moves) end
-       val argsenreg = (List.map TEMP tigerframe.argregs) @ tmpas
-       val (enstack,moves) = carga params' argsenreg (* asumimos enstack es vacio por ahora *) 
-(* Luego se puede generar las instrucciones p/cargar en stack (ò mandar los temporarios) *)
-(*
-Finalmente se genera:
-    CALL(nombre, listadelosparams)
-*)in  
-       (* print(name);print(Int.toString(length(argsenreg))); DEBUG Mariano *)
-       Ex ( ESEQ (seq moves , CALL(NAME name,argsenreg)) ) 
-
+       val tmps = List.tabulate ( length params' , fn _ => TEMP (newtemp()) )
+       val moves = List.map MOVE  (ListPair.zip(tmps,params'))
+in  
+       Ex ( ESEQ (seq moves , CALL(NAME name,tmps)) ) 
   end
 fun letExp ([], body) = Ex (unEx body)
  |  letExp (inits, body) = Ex (ESEQ(seq inits,unEx body))

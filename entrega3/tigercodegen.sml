@@ -12,6 +12,8 @@ fun codegen _ stm = (*se aplica a cada funcion*)
     let val ilist = ref ([]:(instr list)) (*lista de instrucciones que va a ir mutando*)
         fun emit x = ilist := x::(!ilist) (*!ilist es equivalente a *ilist en C y ilist := a es equivalente a *ilist = a en C*)
         fun result gen = let val t = tigertemp.newtemp() in (gen t; t) end
+        val saveregs = List.map (fn x => result (fn nt => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=x, dst=nt}) ; nt) ))
+        fun recoverregs dst src = List.map (fn (d,s) => emit(aMOVE{assem = "movq %'s0, %'d0\n", src=s, dst=d}) ) ( ListPair.zip(dst,src) )
         fun munchStm (SEQ (a,b)) = (munchStm a; munchStm b)
         |   munchStm (MOVE (MEM e1, e2)) = emit(OPER{assem = "movq %'s0, (%'s1)\n", src=[munchExp e2,munchExp e1],dst=[],jump=NONE})
         |   munchStm (MOVE (TEMP i, e2)) = emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e2, dst=i})
@@ -34,9 +36,6 @@ fun codegen _ stm = (*se aplica a cada funcion*)
  (*       |   munchStm (EXP (CALL (NAME lab,args))) = emit(OPER{assem="call "^(makeString lab)^"\n", src=[munchArgs(0,args)], dst=tigerframe.calldefs, jump=NONE}) (* Lo de lo calldefs me pierde bastante ---> Lo puse en tigerFrame *) TODO*) 
         |   munchStm (EXP _) = raise Fail "Creemos que esto no deberia suceder ?\n" (*DUDA: puede suceder esto? mariano *)
         |   munchStm _ = raise Fail "Casos no cubiertos en tigercodegen.munchStm" 
-(* ML ES UNA PORONGA:        and munchExp (BINOP (CULO, e1, e2)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=r}); emit(OPER{assem = "imulq %'s1, %'d0\n", src = [r, munchExp e2], dst = [r, tigerframe.rdx], jump = NONE}))) 
-        |   munchExp (BINOP (DIV, e1, e2)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=tigerframe.rax} ); emit(OPER{assem = "idivq %'s1\n", src = [tigerframe.rax, munchExp e2], dst = [tigerframe.rax, tigerframe.rdx], jump = NONE}); emit(aMOVE{assem = "movq %'s0, %'d0\n", src=tigerframe.rax, dst=r} ))) 
-        |   munchExp _ = raise Fail "TO DO" *)
         and munchExp (CONST i) = result (fn r => emit(OPER{assem = "movq $"^(Int.toString i)^", %'d0\n", src = [], dst = [r], jump = NONE}))
         |   munchExp (NAME lab) = result (fn r => emit(OPER{assem = "movq $"^(makeString lab)^", %'d0\n", src = [], dst = [r], jump = NONE})) (* Con Mariano suponemos que esto no puede aparecer pero por si las dudas ... *)
         |   munchExp (MEM m) = result (fn r => emit(aMOVE{assem = "movq %'s0, %'d0\n", src = munchExp m, dst = r}))
@@ -53,8 +52,8 @@ fun codegen _ stm = (*se aplica a cada funcion*)
         |   munchExp (BINOP (MUL, e1, CONST i)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=r}); emit(OPER{assem = "imulq $"^(Int.toString i)^", %'d0\n", src = [r], dst = [r, tigerframe.rdx], jump = NONE})))
         |   munchExp (BINOP (MUL, e1, e2)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=r}); emit(OPER{assem = "imulq %'s1, %'d0\n", src = [r, munchExp e2], dst = [r, tigerframe.rdx], jump = NONE}))) 
         |   munchExp (BINOP (DIV, CONST i, e1)) = result ( fn r => (emit(OPER{assem = "movq $"^(Int.toString i)^", %'d0\n", src=[], dst=[tigerframe.rax], jump = NONE}); emit(OPER{assem = "idivq %s1'\n", src = [tigerframe.rax, munchExp e1], dst = [tigerframe.rax, tigerframe.rdx], jump = NONE}); emit(aMOVE{assem = "movq %'s0, %'d0\n", src=tigerframe.rax, dst=r} )))
-        |   munchExp (BINOP (DIV, e1, CONST i)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=tigerframe.rax} ); emit(OPER{assem = "movq $"^(Int.toString i)^", %'d0\n", src=[], dst=[r], jump = NONE}); emit(OPER{assem = "idivq %'s1\n", src = [tigerframe.rax, r], dst = [tigerframe.rax, tigerframe.rdx], jump = NONE}); emit(aMOVE{assem = "movq %'s0, %'d0\n", src=tigerframe.rax, dst=r} )))
-        |   munchExp (BINOP (DIV, e1, e2)) = result ( fn r => (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=tigerframe.rax} ); emit(OPER{assem = "idivq %'s1\n", src = [tigerframe.rax, munchExp e2], dst = [tigerframe.rax, tigerframe.rdx], jump = NONE}); emit(aMOVE{assem = "movq %'s0, %'d0\n", src=tigerframe.rax, dst=r} )))
+        |   munchExp (BINOP (DIV, e1, CONST i)) = result ( fn r => let val auxtmps = saveregs [tigerframe.rax, tigerframe.rdx] in (  emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=tigerframe.rax} ); emit(OPER{assem = "movq $"^(Int.toString i)^", %'d0\n", src=[], dst=[r], jump = NONE}); emit(OPER{assem = "idivq %'s1\n", src = [tigerframe.rax, r], dst = [tigerframe.rax, tigerframe.rdx], jump = NONE}); emit(aMOVE{assem = "movq %'s0, %'d0\n", src=tigerframe.rax, dst=r} ) ;  recoverregs [tigerframe.rax,tigerframe.rdx] auxtmps  ) end) 
+        |   munchExp (BINOP (DIV, e1, e2)) = result ( fn r => let val auxtmps = saveregs [tigerframe.rax, tigerframe.rdx] in (emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp e1, dst=tigerframe.rax} ); emit(OPER{assem = "idivq %'s1\n", src = [tigerframe.rax, munchExp e2], dst = [tigerframe.rax, tigerframe.rdx], jump = NONE}); emit(aMOVE{assem = "movq %'s0, %'d0\n", src=tigerframe.rax, dst=r}) ;  recoverregs [tigerframe.rax,tigerframe.rdx] auxtmps  ) end)
         |   munchExp _ = raise Fail "TODO"
         in munchStm stm ; rev(!ilist) end
 
@@ -71,15 +70,4 @@ fun codegen _ stm = (*se aplica a cada funcion*)
                 in emit(OPER{assem = "MOV 'd0, MEM['s0]\n", dst=[t], src = [munchExp e2], jump = NONE} ); emit(OPER{assem = "MOV MEM['d0], 's0\n", dst=[munchExp e1], src = [t], jump = NONE} ) 
                 end
 *)
-
-(*sacado de la clase de Guido *)
-(*Si generamos código intermedio de la forma:
-    MOVE (MEM (CONST i), CONST j).
-Se captura con 
-    | MOVE (MEM .... ) =>
-        emit ( OPER {assem = "MOV M["^Int.toString i^",$"^Int.toString j^"\n", src = [], dst = [], jump = NONE})
-    | MOVE (TEMP t1, TEMP t2)
-        emit ( MOVE {assem = "MOV 'd0, 's0\n", src = t2, dst=t1})
-    | MOE (TEMP t, e) = 
-        emit (MOVE {assem = "MOV 'd0, 's0\n", src = {munchExp e, dst = t}) *)
 end 

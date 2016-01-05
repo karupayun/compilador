@@ -47,7 +47,7 @@ val specialregs = [rv, fp, sp] (* DUDA: para que sirven estos? mariano *)
 val argregs = ["rdi","rsi","rdx","rcx","r8","r9"] (* registros donde van los primeros argumentos segun la convención de llamada *)
 val callersaves = [] (* registros preservador por el invocador *) (* DUDA: que deberia ir aca? mariano *)
 val calleesaves = ["rbx","rbp","rsp","r10","r15"] (* registros preservador por la funcion invocada *)
-val calldefs = []
+val calldefs = callersaves @ [rv]
 
 
 type frame = {
