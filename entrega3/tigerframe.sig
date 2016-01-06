@@ -26,7 +26,7 @@ val procEntryExit1 : frame * tigertree.stm -> tigertree.stm
 val procEntryExit2 : frame * tigerassem.instr list -> tigerassem.instr list
 val procEntryExit3 : frame * tigerassem.instr list -> {prolog:string, body: tigerassem.instr list, epilog: string}
 val argregs : register list
-(*val procEntryExit2 : frame * tigerassem.instr list -> tigerassem.instr list*)
+val seq : tigertree.stm list -> tigertree.stm
 datatype frag = PROC of {body: tigertree.stm, frame: frame}
 	| STRING of tigertemp.label * string
 end

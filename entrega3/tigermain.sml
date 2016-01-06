@@ -38,8 +38,14 @@ fun main(args) =
 		
 		(* val _ = print (tigertrans.Ir(tigertrans.getResult())) *) (* imprime el tree*)
 		val fraglist = tigertrans.getResult() (* fragment list *)
-		val (c,b) = canonize fraglist
-		val _ = tigerinterp.inter inter b c  (* ARREGLAR *)
+		val (stringlist,funclist) = canonize fraglist
+		(*val _ = tigerinterp.inter inter b c  (* ARREGLAR *)*)
+        val _ = List.app ( fn(s,l) => print(tigertemp.makeString l^": "^s^"\n") ) stringlist
+        val afunclist = List.map ( fn (stms,frame) => (tigercodegen.codegens stms,frame) ) funclist
+        val afunclistproc = List.map ( fn (instrs,frame) =>  tigerframe.procEntryExit3(frame,tigerframe.procEntryExit2(frame,instrs) ) ) afunclist
+        val printinstr = tigerassem.format (fn x => x)
+        fun printbody instrs = List.foldr (fn(a,b)=>a^"\n"^b) "" (List.map printinstr instrs)
+        val _ = List.app ( fn {prolog, body, epilog} => print(prolog ^ (printbody body) ^ epilog) ) afunclistproc
 	in
 		print "yes!!\n"
 	end	handle Fail s => print("Fail: "^s^"\n")

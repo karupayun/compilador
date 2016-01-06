@@ -26,6 +26,10 @@ open tigertree
 
 type level = int
 
+fun seq [] = EXP (CONST 0)
+	| seq [s] = s
+	| seq (x::xs) = SEQ (x, seq xs)
+
 val rax = "rax"
 val rdx = "rdx"
 val fp = (*string2temp*) "rbp"				(* frame pointer *)
@@ -46,7 +50,7 @@ val calldefs = [rv]         (* registros que son trasheados por la llamada a fun
 val specialregs = [rv, fp, sp] (* DUDA: para que sirven estos? mariano *)
 val argregs = ["rdi","rsi","rdx","rcx","r8","r9"] (* registros donde van los primeros argumentos segun la convención de llamada *)
 val callersaves = [] (* registros preservador por el invocador *) (* DUDA: que deberia ir aca? mariano *)
-val calleesaves = ["rbx","rbp","rsp","r10","r15"] (* registros preservador por la funcion invocada *)
+val calleesaves = ["rbx","r10","r15"] (* registros preservador por la funcion invocada *)
 val calldefs = callersaves @ [rv]
 
 datatype access = InFrame of int | InReg of tigertemp.temp
@@ -81,8 +85,16 @@ fun exp(InFrame k) efp = MEM(BINOP(PLUS, efp, CONST k))
 fun externalCall(s, l) = CALL(NAME s, l)
 
 fun procEntryExit1 ({argsAcc, ...}: frame,body) = 
-   let fun aux [] _ = body
-       |   aux (acc::accs) n = SEQ( MOVE( exp acc (TEMP fp), if n < List.length argregs then TEMP (List.nth(argregs,n)) else MEM(BINOP(PLUS, CONST ((n-List.length argregs)*8+fpPrevLev), TEMP fp)) ) , aux accs (n+1) ) in aux (!argsAcc) 0 end
-fun procEntryExit2 _ = raise Fail "TODO"
-fun procEntryExit3 _ = raise Fail "TODO"
+   let fun aux [] _ = []
+       |   aux (acc::accs) n = MOVE( exp acc (TEMP fp), if n < List.length argregs then TEMP (List.nth(argregs,n)) else MEM(BINOP(PLUS, CONST ((n-List.length argregs)*8+fpPrevLev), TEMP fp)) ) :: aux accs (n+1)
+       val moveargs = aux (!argsAcc) 0 (*Instrucciones para mover de los argumentos a los locals donde la función ve internamente las cosas *)
+       val freshtmps = List.tabulate (List.length calleesaves , fn _ => TEMP (tigertemp.newtemp()))
+       val saveregs = List.map MOVE (ListPair.zip(freshtmps,List.map TEMP calleesaves)) (* Instrucciones para salvar en temporarios los callee saves *)
+       val restoreregs = List.map MOVE(ListPair.zip(List.map TEMP calleesaves,freshtmps)) (* Restaurar los callee saves *)
+       in seq( saveregs @ moveargs @ [body] @ restoreregs ) end
+       
+fun procEntryExit2(frame:frame,instrs) = instrs (*TODO*)
+fun procEntryExit3(frame:frame,instrs) = {prolog = "PROCEDURE ENTRY SCAFFFOLD " ^ #name frame ^ "\n",
+                                    body = instrs,
+                                    epilog = "PROCEDURE END SCAFFOLD " ^ #name frame ^ "\n"}
 end

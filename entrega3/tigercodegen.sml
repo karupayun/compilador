@@ -8,7 +8,7 @@ open tigertree
 open tigerframe
 open tigertemp
 
-fun codegen _ stm = (*se aplica a cada funcion*)
+fun codegen stm = (*se aplica a cada funcion*)
     let val ilist = ref ([]:(instr list)) (*lista de instrucciones que va a ir mutando*)
         fun emit x = ilist := x::(!ilist) (*!ilist es equivalente a *ilist en C y ilist := a es equivalente a *ilist = a en C*)
         fun result gen = let val t = tigertemp.newtemp() in (gen t; t) end
@@ -64,7 +64,7 @@ fun codegen _ stm = (*se aplica a cada funcion*)
                          in ( emit(OPER{assem = "movq %'s0, "^(Int.toString offset)^"(%'s1)\n", src=[ munchExp x, tigerframe.sp] , dst=[], jump=NONE}) ; munchArgs(n+1,xs) ) end
         in munchStm stm ; rev(!ilist) end
 
-
+fun codegens stms = List.foldr (fn(a,b)=>a@b) [] (List.map codegen stms)
 
 (* DUDA: no entendemos un carajo lo del SP y FP mariano y pablo
             |(MOVE (TEMP t1, BINOP(MINUS, TEMP t2, CONST i)) ) => 
