@@ -1,6 +1,6 @@
 Pablo:
-Pasivo. Leyendo Liveness.
+Activo. graph, flow.
 Mariano:
-Activo. Tigerframe, translate, codegen.
+Activo. frame, translate, codegen.
 Marga:
 En la pileta con sus amigas. No invito a ninguno del equipo. Mal ahí.
