@@ -40,16 +40,16 @@ val wSz = 8					(* word size in bytes *)
 val log2WSz = 3				(* base two logarithm of word size in bytes *)
 val fpPrev = 0				(* offset (bytes) del rbp anterior *)
 val fpPrevLev = 2*wSz		(* offset (bytes) del static link*)
-val argsInicial = 0			(* words cantidad de argumentos en stack inicialmente (por defecto) *) 
+(* val argsInicial = 0			(* words cantidad de argumentos en stack inicialmente (por defecto) *) 
 val argsOffInicial = 0		(* words *)
 val argsGap = wSz			(* bytes desplazamiento de cada argumento *)
 val regInicial = 1			(* reg  cantidad de argumentos en registros inicialmente*)  (* DUDA: por q esto es 1? no deberia ser 0? mariano*)
-val localsInicial = 0		(* words desplazamiento a partir de donde empiezan los locals *)
-val localsGap = ~8 			(* bytes offset de cada local*)
+val localsInicial = 0		(* words desplazamiento a partir de donde empiezan los locals *) *)
+val localsGap = ~wSz 			(* bytes offset de cada local*)
 val calldefs = [rv]         (* registros que son trasheados por la llamada a funcion *)
 val specialregs = [rv, fp, sp] (* DUDA: para que sirven estos? mariano *)
 val argregs = ["rdi","rsi","rdx","rcx","r8","r9"] (* registros donde van los primeros argumentos segun la convención de llamada *)
-val callersaves = [] (* registros preservador por el invocador *) (* DUDA: que deberia ir aca? mariano *)
+val callersaves = ["rax","rdx","rcx"] (* registros preservador por el invocador *) (* DUDA: que deberia ir aca? mariano, en el libro pg 208 dice que deberia ser disjunto con argregs *)
 val calleesaves = ["rbx","r10","r15"] (* registros preservador por la funcion invocada *)
 val calldefs = callersaves @ [rv]
 
@@ -59,21 +59,21 @@ type frame = {
 	name: string,
 	formals: bool list, (*si son escapadas*)
 	argsAcc: access list ref, (*lista de argumentos*)
-	actualLocal: int ref (*offset en words del proximo potencial local*)
+	cantLocalsInFrame: int ref (*offset en words del proximo potencial local*)
 }
 datatype frag = PROC of {body: tigertree.stm, frame: frame} (*text en assembler*)
 	| STRING of tigertemp.label * string (*data en assembler*)
 fun allocLocal (f: frame) b = 
 	case b of
 	true =>
-		let	val ret = InFrame(!(#actualLocal f)+localsGap)
-		in	#actualLocal f:=(!(#actualLocal f)-1); ret end
+		let	val ret = InFrame( (!(#cantLocalsInFrame f)+1) * localsGap)
+		in	#cantLocalsInFrame f:=(!(#cantLocalsInFrame f)+1); ret end
 	| false => InReg(tigertemp.newtemp())
 
 fun newFrame{name, formals} =let val f = { name=name,
                                        	   formals=formals,
                                            argsAcc = ref ([]:access list),
-	                                       actualLocal=ref localsInicial }
+	                                       cantLocalsInFrame=ref 0 }
                                  val _ = #argsAcc f := List.map (fn b => allocLocal f b) formals
                              in f  end
 fun name(f: frame) = #name f
@@ -93,8 +93,15 @@ fun procEntryExit1 ({argsAcc, ...}: frame,body) =
        val restoreregs = List.map MOVE(ListPair.zip(List.map TEMP calleesaves,freshtmps)) (* Restaurar los callee saves *)
        in seq( saveregs @ moveargs @ [body] @ restoreregs ) end
        
-fun procEntryExit2(frame:frame,instrs) = instrs (*TODO*)
-fun procEntryExit3(frame:frame,instrs) = {prolog = "PROCEDURE ENTRY SCAFFFOLD " ^ #name frame ^ "\n",
+fun procEntryExit2(frame:frame,instrs) = instrs @ [tigerassem.OPER{assem="",src=[sp,fp]@calleesaves, dst=[], jump=NONE}]
+fun procEntryExit3(frame:frame,instrs) = {prolog = #name frame ^": \n"^ 
+                                                   "#prologo:\n"^
+                                                   "pushq %rbp\n"^
+                                                   "movq %rsp, %rbp\n"^
+                                                   "addq $"^Int.toString (!(#cantLocalsInFrame frame) * wSz) ^"%rsp\n\n",
                                     body = instrs,
-                                    epilog = "PROCEDURE END SCAFFOLD " ^ #name frame ^ "\n"}
+                                    epilog = "#epilogo "^(#name frame)^"\n"^
+                                             "movq %rbp,%rsp\n"^
+                                             "popq %rbp\n"^
+                                             "ret\n\n" }
 end

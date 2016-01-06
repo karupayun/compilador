@@ -1,2 +1,5 @@
 /* correct if */
-if (10 > 20) then 30 else 40	
+let
+    var author := "mariano"
+    function fact(n : int):int = if n<=1 then n else n*fact(n-1)
+in fact(22) end

@@ -146,7 +146,8 @@ tigersimpleregalloc.uo: tigersimpleregalloc.ui tigerassem.uo
 tigerpp.uo: tigersres.uo tigertab.ui tigertips.uo tigerabs.uo 
 tigertopsort.uo: tigertopsort.ui tigertab.ui tigertips.uo tigerabs.uo 
 tigerescap.ui: tigerabs.uo 
-tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigercanon.ui \
-    tigerinterp.uo tigertemp.ui tigerlex.uo tigertrans.ui tigerpp.uo 
+tigermain.uo: tigerseman.ui tigercodegen.ui tigerescap.ui tigergrm.ui \
+    tigerframe.ui tigercanon.ui tigerassem.uo tigerinterp.uo tigertemp.ui \
+    tigerlex.uo tigertrans.ui tigerpp.uo 
 tigertab.uo: tigertab.ui 
 tigerpila.uo: tigerpila.ui 

@@ -33,7 +33,9 @@ fun codegen stm = (*se aplica a cada funcion*)
                       | salto ULE = "jbe"
                       | salto UGT = "jae"
                 in emit(OPER{assem = "cmpq %'s1, %'s0\n", src=[munchExp e1, munchExp e2], dst= [], jump=NONE}); emit(OPER{assem = (salto rop) ^ " 'j0^\n", src = [], dst = [], jump = SOME [l1,l2]}) end
-        |   munchStm (EXP (CALL (NAME lab,args))) = emit(OPER{assem="call "^(makeString lab)^"\n", src=munchArgs(0,args), dst=tigerframe.calldefs, jump=NONE}) (* Lo de lo calldefs me pierde bastante ---> Lo puse en tigerFrame *) 
+        |   munchStm (EXP (CALL (NAME lab,args))) = ( emit(OPER{assem="call "^(makeString lab)^"\n", src=munchArgs(0,args), dst=tigerframe.calldefs, jump=NONE}) ;
+                                                    let val spoffset = List.length args - List.length tigerframe.argregs (* vamos a recuperar el sp en caso de haber hecho pushq antes del call*)
+                                                    in if spoffset>0 then emit(OPER{assem = "addq $"^(Int.toString spoffset)^", %'d0\n", src = [tigerframe.sp], dst = [tigerframe.sp], jump = NONE}) else () end )
         |   munchStm (EXP _) = raise Fail "Creemos que esto no deberia suceder ?\n" (*DUDA: puede suceder esto? mariano *)
         |   munchStm _ = raise Fail "Casos no cubiertos en tigercodegen.munchStm" 
         and munchExp (CONST i) = result (fn r => emit(OPER{assem = "movq $"^(Int.toString i)^", %'d0\n", src = [], dst = [r], jump = NONE}))
@@ -59,9 +61,7 @@ fun codegen stm = (*se aplica a cada funcion*)
         |   munchArgs(n,x::xs) =
                 if n < List.length tigerframe.argregs then
                       let val r = List.nth(tigerframe.argregs,n) in ( emit(aMOVE{assem = "movq %'s0, %'d0\n", src=munchExp x, dst=r}) ; r :: munchArgs(n+1,xs) ) end
-                else let val pos = n - List.length tigerframe.argregs
-                         val offset = tigerframe.fpPrevLev + pos * tigerframe.wSz
-                         in ( emit(OPER{assem = "movq %'s0, "^(Int.toString offset)^"(%'s1)\n", src=[ munchExp x, tigerframe.sp] , dst=[], jump=NONE}) ; munchArgs(n+1,xs) ) end
+                else ( emit(OPER{assem = "pushq %'s0\n", src=[ munchExp x] , dst=[], jump=NONE}) ; munchArgs(n+1,xs) ) 
         in munchStm stm ; rev(!ilist) end
 
 fun codegens stms = List.foldr (fn(a,b)=>a@b) [] (List.map codegen stms)

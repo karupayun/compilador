@@ -40,6 +40,7 @@ fun main(args) =
 		val fraglist = tigertrans.getResult() (* fragment list *)
 		val (stringlist,funclist) = canonize fraglist
 		(*val _ = tigerinterp.inter inter b c  (* ARREGLAR *)*)
+        val _ = List.app (fn(stms,frame) => print(tigertrans.Ir( [tigerframe.PROC{body=tigerframe.seq stms,frame=frame}] )) ) funclist (* imprime el resultado del canon *)
         val _ = List.app ( fn(s,l) => print(tigertemp.makeString l^": "^s^"\n") ) stringlist
         val afunclist = List.map ( fn (stms,frame) => (tigercodegen.codegens stms,frame) ) funclist
         val afunclistproc = List.map ( fn (instrs,frame) =>  tigerframe.procEntryExit3(frame,tigerframe.procEntryExit2(frame,instrs) ) ) afunclist
