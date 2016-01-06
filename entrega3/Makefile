@@ -70,7 +70,8 @@ GRALOBJS= tigerabs.uo tigergrm.uo tigerlex.uo tigermain.uo \
 	tigernlin.uo tigerpp.uo tigerescap.uo tigertab.uo tigertemp.uo \
 	tigertips.uo tigerseman.uo tigertopsort.uo tigermuestratipos.uo tigerpp.uo \
 	tigertemp.uo tigertree.uo tigerframe.uo tigertrans.uo tigerit.uo tigerpila.uo \
-        tigercanon.uo tigerinterp.uo tigerassem.uo tigercodegen.uo
+        tigercanon.uo tigerinterp.uo tigerassem.uo tigercodegen.uo tigergraph.uo \
+        tigerflow.uo
 
 all: tiger
 
@@ -95,6 +96,7 @@ clean:
 	$(REMOVE) errlist
 	$(REMOVE) *.o
 	$(REMOVE) tiger
+	$(REMOVE) *~
 
 .sig.ui:
 	$(MOSMLC) $<
@@ -117,6 +119,7 @@ tigerseman.ui: tigerabs.uo
 tigerframe.uo: tigerframe.ui tigertree.uo tigertemp.ui 
 tigerescap.ui: tigerabs.uo 
 tigercanon.ui: tigertree.uo tigerframe.ui tigertemp.ui 
+tigergraph.uo: tigergraph.ui tigertab.ui 
 tigercodegen.ui: tigertree.uo tigerframe.ui tigerassem.uo 
 tigersimpleregalloc.ui: tigerframe.ui tigerassem.uo 
 tigerassem.uo: tigertemp.ui 
@@ -127,9 +130,8 @@ tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo
 tigertemp.uo: tigertemp.ui 
 tigertrans.uo: tigertrans.ui tigertree.uo tigerpila.ui tigerframe.ui \
     tigerit.uo tigertemp.ui tigerabs.uo 
-tigermain.uo: tigerseman.ui tigercodegen.ui tigertree.uo tigerescap.ui \
-    tigergrm.ui tigercanon.ui tigerinterp.uo tigerlex.uo tigertrans.ui \
-    tigerpp.uo 
+tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigercanon.ui \
+    tigerinterp.uo tigerlex.uo tigertrans.ui tigerpp.uo 
 tigerinterp.uo: tigertree.uo tigertab.ui tigerframe.ui tigerit.uo \
     tigertemp.ui 
 tigersimpleregalloc.uo: tigersimpleregalloc.ui tigerassem.uo 
@@ -143,6 +145,7 @@ tigersres.uo: tigertab.ui tigertips.uo tigertemp.ui tigerabs.uo \
 tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo 
 tigermuestratipos.ui: tigertips.uo 
 tigerpila.uo: tigerpila.ui 
+tigerflow.uo: tigerflow.ui tigergraph.ui 
 tigerpp.uo: tigersres.uo tigertab.ui tigertips.uo tigerabs.uo 
 tigerlex.uo: tigergrm.ui tigernlin.uo 
 tigercodegen.uo: tigercodegen.ui tigertree.uo tigerframe.ui tigerassem.uo \

@@ -1,10 +1,13 @@
 signature tigerflow = 
 sig
     type graph
+    type temp
 
     datatype flowgraph = FGRAPH of {control: graph,
-				    def: Temp.temp list Graph.Table.table,
-				    use: Temp.temp list Graph.Table.table,
-				    ismove: bool Graph.Table.table}
+				    def: temp list tigergraph.mapnode,
+				    use: temp list tigergraph.mapnode,
+				    ismove: bool tigergraph.mapnode}
+
+  (*  val makegraph: Assem.instr*)
 
 end
