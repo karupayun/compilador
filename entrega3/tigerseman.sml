@@ -338,8 +338,8 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
             
             fun procF (argsTiposEscapes, level, nl, body, tRet) = let val _ = preFunctionDec()
                                                                       val _ = pushLevel level
-                                                                      val _ = allocArg level true (* Static Link! *)
-                                                                      val myenv = foldl (fn((argT,argN,escape),v)=>(tabRInserta(argN, Var {ty=argT, access=allocArg level escape, level=getActualLev()  }, v))) venv' argsTiposEscapes
+                                                                      val accesslist = tigertrans.formals level
+                                                                      val myenv = foldl (fn(((argT,argN,escape),acc),v)=>(tabRInserta(argN, Var {ty=argT, access=allocLocal level escape, level=getActualLev()  }, v))) venv' (ListPair.zip(argsTiposEscapes,accesslist))
                                                                       val {ty=fTy,exp=fExp} = transExp(myenv,tenv) body
                                                                       val _ = if tiposIguales tRet fTy then () else (error("La funcion no devuelve el tipo con el que se la declara",nl))
                                                                       val _ = functionDec(fExp, topLevel(), tRet=TUnit)

@@ -25,11 +25,10 @@ val outermost: level = {parent=NONE,
 fun newLevel{parent={parent, frame, level}, name, formals} =
 	{
 	parent=SOME frame,
-	frame=newFrame{name=name, formals=formals},
+	frame=newFrame{name=name, formals=(true::formals)}, (*static link*)
 	level=level+1}
-fun allocArg{parent, frame, level} b = tigerframe.allocArg frame b
 fun allocLocal{parent, frame, level} b = tigerframe.allocLocal frame b
-fun formals{parent, frame, level} = tigerframe.formals frame
+fun formals{parent, frame, level} = List.tl (tigerframe.formals frame)
 
 datatype exp =
 	Ex of tigertree.exp
@@ -149,14 +148,10 @@ fun nilExp() = Ex (CONST 0)
 fun intExp i = Ex (CONST i)
 
 fun simpleVar(acc, nivel) =(*nivel de anidamiento, puede estar en otro frame*)
-	case acc of
-	    InReg r => Ex(TEMP r)
-	    |InFrame k => (*k es el offset en el frame*)
-		    let fun aux 0 = TEMP fp 
-		    	| aux n = MEM(BINOP(PLUS,CONST fpPrev, aux(n-1)))
-		    in Ex(MEM(BINOP(PLUS,CONST k,aux(!actualLevel-nivel)))) end
-		(*COMPLETAdo*)
-
+    let fun aux 0 = TEMP fp 
+		  | aux n = MEM(BINOP(PLUS,CONST fpPrevLev, aux(n-1)))
+        val fp = aux(!actualLevel-nivel)
+    in Ex(tigerframe.exp acc fp) end
 
 fun fieldVar(var, field) = 
 	let val r = unEx var
@@ -222,7 +217,7 @@ fun callExp(name, extern,isproc,level:level, params) = (*TODO*)
     (* evaluaremos los parámetros de izq a der *)
     let
        val staticlink = let fun aux 0 = TEMP fp 
-		    	               | aux n = MEM(BINOP(PLUS,CONST fpPrev, aux(n-1)))
+		    	               | aux n = MEM(BINOP(PLUS,CONST fpPrevLev, aux(n-1)))
 		                       in aux(getActualLev() - #level level+1) end    
        val params' =  if (not extern) then staticlink :: (List.map unEx params) else (List.map unEx params)
        val tmps = List.tabulate ( length params' , fn _ => TEMP (newtemp()) )

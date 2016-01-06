@@ -40,7 +40,7 @@ val argsInicial = 0			(* words cantidad de argumentos en stack inicialmente (por
 val argsOffInicial = 0		(* words *)
 val argsGap = wSz			(* bytes desplazamiento de cada argumento *)
 val regInicial = 1			(* reg  cantidad de argumentos en registros inicialmente*)  (* DUDA: por q esto es 1? no deberia ser 0? mariano*)
-val localsInicial = ~1		(* words desplazamiento a partir de donde empiezan los locals *)
+val localsInicial = 0		(* words desplazamiento a partir de donde empiezan los locals *)
 val localsGap = ~8 			(* bytes offset de cada local*)
 val calldefs = [rv]         (* registros que son trasheados por la llamada a funcion *)
 val specialregs = [rv, fp, sp] (* DUDA: para que sirven estos? mariano *)
@@ -49,67 +49,40 @@ val callersaves = [] (* registros preservador por el invocador *) (* DUDA: que d
 val calleesaves = ["rbx","rbp","rsp","r10","r15"] (* registros preservador por la funcion invocada *)
 val calldefs = callersaves @ [rv]
 
-
+datatype access = InFrame of int | InReg of tigertemp.temp
+type register = string
 type frame = {
 	name: string,
 	formals: bool list, (*si son escapadas*)
-	locals: bool list,
-	actualArg: int ref, (*ultimo arg generado*)
-	actualLocal: int ref, (*ultimo local generado*)
-	actualReg: int ref
+	argsAcc: access list ref, (*lista de argumentos*)
+	actualLocal: int ref (*offset en words del proximo potencial local*)
 }
-
-
-type register = string
-datatype access = InFrame of int | InReg of tigertemp.label
 datatype frag = PROC of {body: tigertree.stm, frame: frame} (*text en assembler*)
 	| STRING of tigertemp.label * string (*data en assembler*)
-fun newFrame{name, formals} = {
-	name=name,
-	formals=formals,
-	locals=[], (* DUDA: que es este campo? mariano *)
-	actualArg=ref argsInicial, (* DUDA: que es este campo? mariano *)
-	actualLocal=ref localsInicial,
-	actualReg=ref regInicial (* DUDA: este campo es la cantidad de registros usados como argumentos? mariano *)
-}
-fun name(f: frame) = #name f
-fun string(l, s) = l^tigertemp.makeString(s)^"\n"
-(* old formals function *)
-fun formals({actualArg=a, ...}: frame) = (*DUDA: que debe devolver esta funcion? mariano *)
-	let	fun aux(n, m) = if m=0 then [] else InFrame(n)::aux(n+argsGap, m-1)
-	in aux(argsInicial, !a) end
-(* new formals function*)
-(* TODO *)
-fun maxRegFrame(f: frame) = !(#actualReg f)
-(* old allocArg function *)
-fun allocArg (f: frame) b = (* Generar un acceso ... *)
-	case b of
-	_ =>
-		let	val ret = (!(#actualArg f)+argsOffInicial)*wSz
-			val _ = #actualArg f := !(#actualArg f)+1
-		in	InFrame ret end
-	(* | false => InReg(tigertemp.newtemp()) *)
-(* new allocArg function *)
-(*fun allocArg (f:frame) b = TODO
-    if !(#actualArg f) < length argregs then
-        if b then
-            let val dir = !(#actualLocal f)*wSz
-                val _ = (#locals f) := (!(#locals f) @ [InFrame ret])
-                val _ = (#actualArg f) := (!(#actualArg f)+1)
-                val _ = (#actualLocal f) := (!(#actualLocal f)-1)
-		    in InFrame ret end 
-*)
 fun allocLocal (f: frame) b = 
 	case b of
 	true =>
 		let	val ret = InFrame(!(#actualLocal f)+localsGap)
 		in	#actualLocal f:=(!(#actualLocal f)-1); ret end
 	| false => InReg(tigertemp.newtemp())
-fun exp(InFrame k) e = MEM(BINOP(PLUS, e, CONST k))
+
+fun newFrame{name, formals} =let val f = { name=name,
+                                       	   formals=formals,
+                                           argsAcc = ref ([]:access list),
+	                                       actualLocal=ref localsInicial }
+                                 val _ = #argsAcc f := List.map (fn b => allocLocal f b) formals
+                             in f  end
+fun name(f: frame) = #name f
+fun string(l, s) = l^tigertemp.makeString(s)^"\n"
+(* old formals function *)
+fun formals({argsAcc, ...}: frame) = !argsAcc
+fun exp(InFrame k) efp = MEM(BINOP(PLUS, efp, CONST k))
 | exp(InReg l) e = TEMP l
 fun externalCall(s, l) = CALL(NAME s, l)
 
-fun procEntryExit1 (frame,body) = 
-   
-   body
+fun procEntryExit1 ({argsAcc, ...}: frame,body) = 
+   let fun aux [] _ = body
+       |   aux (acc::accs) n = SEQ( MOVE( exp acc (TEMP fp), if n < List.length argregs then TEMP (List.nth(argregs,n)) else MEM(BINOP(PLUS, CONST ((n-List.length argregs)*8+fpPrevLev), TEMP fp)) ) , aux accs (n+1) ) in aux (!argsAcc) 0 end
+fun procEntryExit2 _ = raise Fail "TODO"
+fun procEntryExit3 _ = raise Fail "TODO"
 end
