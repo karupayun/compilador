@@ -40,7 +40,7 @@ fun codegen stm = (*se aplica a cada funcion*)
         |   munchStm _ = raise Fail "Casos no cubiertos en tigercodegen.munchStm" 
         and munchExp (CONST i) = result (fn r => emit(OPER{assem = "movq $"^(Int.toString i)^", %'d0\n", src = [], dst = [r], jump = NONE}))
         |   munchExp (NAME lab) = result (fn r => emit(OPER{assem = "movq $"^(makeString lab)^", %'d0\n", src = [], dst = [r], jump = NONE})) (* Con Mariano suponemos que esto no puede aparecer pero por si las dudas ... *)
-        |   munchExp (MEM m) = result (fn r => emit(aMOVE{assem = "movq %'s0, %'d0\n", src = munchExp m, dst = r}))
+        |   munchExp (MEM m) = result (fn r => emit(OPER{assem = "movq (%'s0), %'s1\n", src =[munchExp m,r] , dst =[], jump=NONE}))
         |   munchExp (TEMP t) = t 
         |   munchExp (CALL _) = raise Fail "Este caso CALL no debería aparecer por el canonizar"
         |   munchExp (ESEQ _) = raise Fail "Este caso ESEQ no debería aparecer por el canonizar"

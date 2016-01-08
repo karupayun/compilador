@@ -93,7 +93,7 @@ fun procEntryExit1 ({argsAcc, ...}: frame,body) =
        val restoreregs = List.map MOVE(ListPair.zip(List.map TEMP calleesaves,freshtmps)) (* Restaurar los callee saves *)
        in seq( saveregs @ moveargs @ [body] @ restoreregs ) end
        
-fun procEntryExit2(frame:frame,instrs) = instrs @ [tigerassem.OPER{assem="",src=[sp,fp]@calleesaves, dst=[], jump=NONE}]
+fun procEntryExit2(frame:frame,instrs) = instrs @ [tigerassem.OPER{assem="",src=[rv,sp,fp]@calleesaves, dst=[], jump=NONE}]
 fun procEntryExit3(frame:frame,instrs) = {prolog = #name frame ^": \n"^ 
                                                    "#prologo:\n"^
                                                    "pushq %rbp\n"^
