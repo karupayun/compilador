@@ -70,7 +70,8 @@ GRALOBJS= tigerabs.uo tigergrm.uo tigerlex.uo tigermain.uo \
 	tigernlin.uo tigerpp.uo tigerescap.uo tigertab.uo tigertemp.uo \
 	tigertips.uo tigerseman.uo tigertopsort.uo tigermuestratipos.uo tigerpp.uo \
 	tigertemp.uo tigertree.uo tigerframe.uo tigertrans.uo tigerit.uo tigerpila.uo \
-        tigercanon.uo tigerinterp.uo tigerassem.uo tigercodegen.uo
+        tigercanon.uo tigerinterp.uo tigerassem.uo tigercodegen.uo tigergraph.uo \
+	tigerflow.uo
 
 all: tiger
 
@@ -110,44 +111,44 @@ depend: tigerabs.sml tigergrm.sml tigerlex.sml tigermain.sml \
 	$(MOSMLTOOLS)/mosmldep >> Makefile
 
 ### DO NOT DELETE THIS LINE
-tigertree.uo: tigertemp.ui 
-tigermuestratipos.ui: tigertips.uo 
-tigerescap.uo: tigerescap.ui tigertab.ui tigerabs.uo 
-tigercodegen.uo: tigercodegen.ui tigertree.uo tigerframe.ui tigerassem.uo \
-    tigertemp.ui 
-tigersimpleregalloc.ui: tigerframe.ui tigerassem.uo 
-tigergrm.ui: tigerabs.uo 
-tigertemp.uo: tigertemp.ui 
-tigerlex.uo: tigergrm.ui tigernlin.uo 
-tigerassem.uo: tigertemp.ui 
-tigerflow.uo: tigerflow.ui 
 tigergraph.uo: tigergraph.ui tigertab.ui 
-tigerframe.uo: tigerframe.ui tigertree.uo tigertemp.ui 
-tigercodegen.ui: tigertree.uo tigerassem.uo 
+tigertrans.uo: tigertrans.ui tigertree.uo tigerpila.ui tigerframe.ui \
+    tigerit.uo tigertemp.ui tigerabs.uo 
+tigersimpleregalloc.uo: tigersimpleregalloc.ui tigerassem.uo 
+tigerpila.uo: tigerpila.ui 
 tigerframe.ui: tigertree.uo tigerassem.uo tigertemp.ui 
 tigercanon.uo: tigercanon.ui tigertree.uo tigertab.ui tigerframe.ui \
     tigertemp.ui 
-tigerinterp.uo: tigertree.uo tigertab.ui tigerframe.ui tigerit.uo \
-    tigertemp.ui 
-tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo 
-tigersres.uo: tigertab.ui tigertips.uo tigertemp.ui tigerabs.uo \
-    tigertrans.ui 
-tigerit.uo: tigertree.uo tigertab.ui 
-tigercanon.ui: tigertree.uo tigerframe.ui tigertemp.ui 
-tigertrans.uo: tigertrans.ui tigertree.uo tigerpila.ui tigerframe.ui \
-    tigerit.uo tigertemp.ui tigerabs.uo 
-tigermuestratipos.uo: tigermuestratipos.ui tigertips.uo 
-tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
-tigerseman.ui: tigerabs.uo 
+tigercodegen.ui: tigertree.uo tigerassem.uo 
+tigertemp.uo: tigertemp.ui 
 tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigerpila.ui \
     tigertopsort.ui tigertemp.ui tigerabs.uo tigertrans.ui tigerpp.uo 
-tigertrans.ui: tigertree.uo tigerframe.ui tigertemp.ui tigerabs.uo 
-tigersimpleregalloc.uo: tigersimpleregalloc.ui tigerassem.uo 
-tigerpp.uo: tigersres.uo tigertab.ui tigertips.uo tigerabs.uo 
-tigertopsort.uo: tigertopsort.ui tigertab.ui tigertips.uo tigerabs.uo 
-tigerescap.ui: tigerabs.uo 
+tigersimpleregalloc.ui: tigerframe.ui tigerassem.uo 
+tigermuestratipos.uo: tigermuestratipos.ui tigertips.uo 
+tigerlex.uo: tigergrm.ui tigernlin.uo 
+tigerseman.ui: tigerabs.uo 
+tigercanon.ui: tigertree.uo tigerframe.ui tigertemp.ui 
 tigermain.uo: tigerseman.ui tigercodegen.ui tigerescap.ui tigergrm.ui \
     tigerframe.ui tigercanon.ui tigerassem.uo tigerinterp.uo tigertemp.ui \
     tigerlex.uo tigertrans.ui tigerpp.uo 
+tigerescap.uo: tigerescap.ui tigertab.ui tigerabs.uo 
+tigersres.uo: tigertab.ui tigertips.uo tigertemp.ui tigerabs.uo \
+    tigertrans.ui 
 tigertab.uo: tigertab.ui 
-tigerpila.uo: tigerpila.ui 
+tigerinterp.uo: tigertree.uo tigertab.ui tigerframe.ui tigerit.uo \
+    tigertemp.ui 
+tigercodegen.uo: tigercodegen.ui tigertree.uo tigerframe.ui tigerassem.uo \
+    tigertemp.ui 
+tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
+tigerassem.uo: tigertemp.ui 
+tigermuestratipos.ui: tigertips.uo 
+tigerflow.uo: tigerflow.ui tigergraph.ui tigerassem.uo 
+tigertrans.ui: tigertree.uo tigerframe.ui tigertemp.ui tigerabs.uo 
+tigerframe.uo: tigerframe.ui tigertree.uo tigerassem.uo tigertemp.ui 
+tigerescap.ui: tigerabs.uo 
+tigergrm.ui: tigerabs.uo 
+tigertopsort.uo: tigertopsort.ui tigertab.ui tigertips.uo tigerabs.uo 
+tigertree.uo: tigertemp.ui 
+tigerpp.uo: tigersres.uo tigertab.ui tigertips.uo tigerabs.uo 
+tigerit.uo: tigertree.uo tigertab.ui 
+tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo 
