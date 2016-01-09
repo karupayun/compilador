@@ -142,7 +142,7 @@ tigercodegen.uo: tigercodegen.ui tigertree.uo tigerframe.ui tigerassem.uo \
 tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
 tigerassem.uo: tigertemp.ui 
 tigermuestratipos.ui: tigertips.uo 
-tigerflow.uo: tigerflow.ui tigergraph.ui tigerassem.uo 
+tigerflow.uo: tigerflow.ui tigergraph.ui tigerassem.uo tigertemp.ui 
 tigertrans.ui: tigertree.uo tigerframe.ui tigertemp.ui tigerabs.uo 
 tigerframe.uo: tigerframe.ui tigertree.uo tigerassem.uo tigertemp.ui 
 tigerescap.ui: tigerabs.uo 

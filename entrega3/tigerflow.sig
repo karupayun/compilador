@@ -1,14 +1,16 @@
 signature tigerflow = 
 sig
-    structure graph
-    type instruc
-    type table
+    type instr
+    type 'a table
     type node
+    type temp
+    type graph
+
 
     datatype flowgraph = FGRAPH of {control: graph,
-				    def: Temp.temp list table,
-				    use: Temp.temp list table,
+				    def: temp list table,
+				    use: temp list table,
 				    ismove: bool table}
 
-    val makeGraph: instruc list -> flowgraph * node list
+(*    val makeGraph: instr list -> flowgraph * node list    HACIENDOLA*)
 end
