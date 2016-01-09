@@ -1,13 +1,16 @@
 signature tigerflow = 
 sig
-    type graph
+    type instr
+    type 'a table
+    type node
     type temp
+    type graph
+
 
     datatype flowgraph = FGRAPH of {control: graph,
-				    def: temp list tigergraph.mapnode,
-				    use: temp list tigergraph.mapnode,
-				    ismove: bool tigergraph.mapnode}
+				    def: temp list table,
+				    use: temp list table,
+				    ismove: bool table}
 
-  (*  val makegraph: Assem.instr*)
-
+(*    val makeGraph: instr list -> flowgraph * node list    HACIENDOLA*)
 end

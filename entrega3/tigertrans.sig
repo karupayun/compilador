@@ -11,10 +11,9 @@ val newLevel : {parent: level, name: tigertemp.label,
 				formals: bool list} -> level (*formals: si escapan o no*)
 val formals : level -> access list
 val getActualLev : unit -> int
-val allocArg : level -> bool -> access
 val allocLocal : level -> bool -> access
 
-type exp 
+type exp
 val procEntryExit : {level: level, body: exp} -> unit
 val getResult : unit -> frag list
 val unitExp : unit -> exp

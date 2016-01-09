@@ -3,6 +3,7 @@ sig
 
 type graph
 type node
+type ('a, 'b) tabla
 
 val nodes: graph -> node list 
 val succ: node -> node list
@@ -18,6 +19,6 @@ val rm_edge: {from: node, to: node} -> unit
 
 val nodename: node -> string
 
-type 'a mapnode 
+type 'a mapnode
 
 end

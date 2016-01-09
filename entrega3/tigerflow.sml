@@ -1,19 +1,20 @@
 structure tigerflow :> tigerflow =
 struct
-    open tigergraph
-
+  
+    type graph = tigergraph.graph
+    type instr = tigerassem.instr
+    type 'a table = 'a tigergraph.mapnode
+    type node = tigergraph.node
     type temp = tigertemp.temp
 
-    datatype flowgraph = FGRAPH of {control: tigergraph.graph,
-				    def: tigertemp.temp list tigergraph.mapnode,
-				    use: tigertemp.temp list tigergraph.mapnode,
-				    ismove: bool tigergraph.mapnode}
+    datatype flowgraph = FGRAPH of {control: graph,
+				    def: temp list table,
+				    use: temp list table,
+				    ismove: bool table}
+    
+  (* MakeGraph va a venir acá para no hacer un modulo unitario *)
 
-
-    (*MakeGraph va a venir acá para no hacer un modulo unitario *)
-
-  (*  val makegraph :: Assem.instr list -> flowgraph * (graph.node list) *)
-
+  (*  val makeGraph = return () *)
   (* Note:  any "use" within the block is assumed to be BEFORE a "def" 
         of the same variable.  If there is a def(x) followed by use(x)
        in the same block, do not mention the use in this data structure,
