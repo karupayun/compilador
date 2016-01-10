@@ -22,7 +22,7 @@ struct
 				    type array = noderep array
                              end) *)
 
- type graph = noderep array (* El grafo solo es el array de sucesores y predecesores de cada nodo *)
+  type graph = noderep array (* El grafo solo es el array de sucesores y predecesores de cada nodo *)
 
   type node = graph * node' (* el nodo guarda la información del grafo y un int. Es interesante para no mezclar nodos de grafos distintos. *)
   fun eq((_,a),(_,b)) = a=b (* TEST: Aca falta la comparacion de grafos pero es compleja, no? *)

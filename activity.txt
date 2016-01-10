@@ -1,6 +1,23 @@
 Pablo:
-Activo. graph, flow.
+Activo. flow.
 Mariano:
 Activo. frame, translate, codegen.
 Marga:
 En la pileta con sus amigas. No invito a ninguno del equipo. Mal ahí.
+
+
+Estado:
+Selección de Instrucciones:
+
+???
+
+
+
+Liveness: 40% Completo. 
+
+- Structure Graph y FlowGraph --  (100%, ya se puede ver.)
+- MakeGraph (Instr -> Graph)  --  (40% Trabajando en mi rama, Pablo)
+- Liveness ---------------------  (Leído (Pablo). 0%)
+
+
+Coloreo: 0% Completo.
