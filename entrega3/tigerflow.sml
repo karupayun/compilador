@@ -16,7 +16,23 @@ struct
 (*  datatype instr = OPER of {assem:string, src:temp list, dst:temp list, jump:label list option }
                | LABEL of {assem:string, lab:label}
                | MOVE of {assem:string, src:temp, dst:temp}*)
-  
+
+
+
+(*
+Marga:     datatype flowgraph = FGRAPH of {control: tigergraph.graph,
+                                    def: (tigergraph.node * tigertemp.temp list) list,
+                                    use: (tigergraph.node * tigertemp.temp list) list,
+                                    ismove: (tigergraph.node * bool) list}
+
+no se como crear tablas donde la clave sean de tipo node, creo que el problema esta en que hay un array pero no estoy segura. asi que cambia 	    def: tigertemp.temp list tigergraph.mapnode,
+			    use: tigertemp.temp list tigergraph.mapnode,
+			    ismove: bool tigergraph.mapnode
+a
+                def: tigergraph.node * tigertemp.temp list,
+			    use: tigergraph.node * tigertemp.temp list,
+			    ismove: tigergraph.node * bool
+*)  
 
 fun fst (x,_) = x
 
