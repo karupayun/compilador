@@ -82,6 +82,8 @@ fun string(l, s) = l^tigertemp.makeString(s)^"\n"
 fun formals({argsAcc, ...}: frame) = !argsAcc
 fun exp(InFrame k) efp = MEM(BINOP(PLUS, efp, CONST k))
 | exp(InReg l) e = TEMP l
+fun offset(InFrame k) = k
+| offset(InReg l) = raise Fail "Ooops"
 fun externalCall(s, l) = CALL(NAME s, l)
 
 fun procEntryExit1 ({argsAcc, ...}: frame,body) = 
