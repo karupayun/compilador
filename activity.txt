@@ -1,5 +1,9 @@
 Pablo:
+<<<<<<< HEAD
 Activo. flow.
+=======
+Pasivo. Leyendo coloreo.
+>>>>>>> pablo
 Mariano:
 Activo. frame, translate, codegen.
 Marga:
@@ -15,7 +19,7 @@ Liveness: 90% Completo.
 
 - Structure Graph y FlowGraph --  (100%, ya se puede ver.)
 - MakeGraph (Instr -> Graph)  --  (90% Falta testear.)
-- Liveness ---------------------  (80% Falta testear. Leyendo lo de Marga (Pablo))
+- Liveness ---------------------  (80% Falta testear. Falta leer lo de Marga (Pablo))
 
 
 
