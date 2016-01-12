@@ -5,15 +5,14 @@ Activo. flow.
 Pasivo. Leyendo coloreo.
 >>>>>>> pablo
 Mariano:
-Activo. frame, translate, codegen.
+Activo. frame, translate, codegen, spill.
 Marga:
 Pasiva.
 
 
 Estado:
-Selección de Instrucciones: 100% Completo?
+Selección de Instrucciones: 100% 
 
-???
 
 Liveness: 90% Completo. 
 
