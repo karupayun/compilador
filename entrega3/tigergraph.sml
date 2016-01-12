@@ -5,7 +5,7 @@ struct
 
   type node' = int
   type temp = tigertemp.temp
-  type ('a, 'b) tabla = ('a, 'b) tigertab.Tabla
+
 
   datatype noderep = NODE of {succ: node' list, pred: node' list} 
 
@@ -26,6 +26,8 @@ struct
 
   type node = graph * node' (* el nodo guarda la información del grafo y un int. Es interesante para no mezclar nodos de grafos distintos. *)
   fun eq((_,a),(_,b)) = a=b (* TEST: Aca falta la comparacion de grafos pero es compleja, no? *)
+
+  fun cmp((_,a),(_,b)) = Int.compare(a,b)
 
   fun augment (g: graph) (n: node') : node = (g,n)
 
@@ -79,7 +81,6 @@ struct
 
 
   fun nodename(g,i:int) = "n" ^ Int.toString(i) (* Para debug *)
-  type 'a mapnode = (node, 'a) tabla
 
 end
 

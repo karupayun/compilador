@@ -1,16 +1,12 @@
 signature tigerflow = 
 sig
     type instr
-    type 'a table
-    type node
     type temp
-    type graph
 
+    datatype flowgraph = FGRAPH of {control: tigergraph.graph,
+				                    def: (tigergraph.node, tigertemp.temp list) Splaymap.dict,
+				                    use: (tigergraph.node, tigertemp.temp list) Splaymap.dict,
+				                    ismove: (tigergraph.node, bool) Splaymap.dict}
 
-    datatype flowgraph = FGRAPH of {control: graph,
-				    def: temp list table,
-				    use: temp list table,
-				    ismove: bool table}
-
-(*    val makeGraph: instr list -> flowgraph * node list    HACIENDOLA*)
+    val makeGraph: instr list -> flowgraph * tigergraph.node list
 end
