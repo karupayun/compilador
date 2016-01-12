@@ -34,7 +34,7 @@ fun codegen stm = (*se aplica a cada funcion*)
                       | salto UGT = "jae"
                 in emit(OPER{assem = "cmpq %'s1, %'s0\n", src=[munchExp e1, munchExp e2], dst= [], jump=NONE}); emit(OPER{assem = (salto rop) ^ " 'j0^\n", src = [], dst = [], jump = SOME [l1,l2]}) end
         |   munchStm (EXP (CALL (NAME lab,args))) = ( emit(OPER{assem="call "^(makeString lab)^"\n", src=munchArgs(0,args), dst=tigerframe.calldefs, jump=NONE}) ;
-                                                    let val spoffset = List.length args - List.length tigerframe.argregs (* vamos a recuperar el sp en caso de haber hecho pushq antes del call*)
+                                                    let val spoffset = (List.length args - List.length tigerframe.argregs)*tigerframe.wSz (* vamos a recuperar el sp en caso de haber hecho pushq antes del call*)
                                                     in if spoffset>0 then emit(OPER{assem = "addq $"^(Int.toString spoffset)^", %'d0\n", src = [tigerframe.sp], dst = [tigerframe.sp], jump = NONE}) else () end )
         |   munchStm (EXP _) = raise Fail "Creemos que esto no deberia suceder ?\n" (*DUDA: puede suceder esto? mariano *)
         |   munchStm _ = raise Fail "Casos no cubiertos en tigercodegen.munchStm" 
