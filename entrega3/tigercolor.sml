@@ -14,24 +14,41 @@ sig
     spillCost x = 1
     registers = [rax,...,] tigerframe.registers*)
 
-        val precolored = addList ((empty String.compare), r)
+       val precolored = addList ((empty String.compare), r)
        val k = numItems precolored
 
-    fun color {interferencia = g, initial = i, spillCost = s, registers = r } = let
+	fun addSet (s,e) = s := add (!s,e)
+	fun hayElem s = not(isEmpty(!s))
+	fun deleteSet (s,e) = if member(!s,e) then s:= delete (!s,e) else ()
+	fun pertSet (s,e) = member(!s,e)
+	fun takeSet (s,e) = e := hd(listItems(!s))
+	fun vaciar (s) = s := empty  
+	fun toSet s = addList  (empty,!s) 
+
+	fun push (p,e) = p := (!p @ [e])
+	fun pop (p,e) = (e := hd(!p) ; p := tail(!p))
+
+	fun colorearCoalesced n = color[n] := color[GetAlias(n)]
+	
+
+  fun color {interferencia = g, initial = i, spillCost = s, registers = r } = let
 
  (*ref*)val initial = 
 
         val map (g.gtemp) (g.graph.nodes) (*Ver como hacer esto *)
+
         val simplifyWorklist = ref []
         val freezeWorklist = ref (empty String.compare)
         val spillWorklist = ref (empty String.compare)
+
+
         val spilledNodes = ref (empty String.compare)
         val coalescedNodes = ref (empty String.compare)
         val coloredNodes = ref (empty String.compare)
-        val selectStack = []
+        val selectStack = ref []
 
 
-        val coalescedMoves = 
+        val coalescedMoves = ref (empty String.compare)
         val contrainedMoves = 
         val frozenMoves = 
         val worklistMoves = 
@@ -53,12 +70,12 @@ sig
             repeat
                 if not(null(!simplifyWorklist)) then Simplify()
                 else if workListMoves <> {} then Coalesce()
-                else if freezeWorkList <> {} then Freeze() 
-                else if spillWorkList <> {} then SelectSpill()
+                else if hayElem(freezeWorkList) then Freeze() 
+                else if hayElem(spillWorkList) then SelectSpill()
             until not(null(!simplifyWorklist)} andalso workListMove = {} 
-                  andalso freezeWorkList = {} andalso spillWorkList = {} 
+                  andalso hayElem(!freezeWorkList) andalso hayElem(spillWorkList)
             AssignColors()
-            if spilledNodes <> {} then 
+            if hayElem(spilledNodes) then 
                 RewriteProgram(spillesNodes)
                 Main()
 
@@ -88,8 +105,7 @@ sig
                     adjList[v] <- adjList[v] U {u}
                     degree[v] <- degree[v] + 1   
 
-        function Adjacent(n)
-            adjList[n] \ (selectStack U coalescedNodes)        
+        function Adjacent(n) = difference ( adjList[n] , addList(!selectStack , !coalescedNodes))        
 
         function NodeMoves(u)
             moveList[n] interseccion (activeMoves U workListMoves)
@@ -101,16 +117,16 @@ sig
             forall n en initial
                 initial <- initial \{n}
                 if degree[n] >= k then (*k es la cantidad de colores*)
-                    spillWorkList <- spillWorkList U {n}
+                    addSet (spillWorkList, n)
                 else if moveRelated[n] then 
-                        freezeWorkList <- freezeWorkList U {n}
+                        addSet (freezeWorkList, n)
                     else 
                         simplifyWorkList = simplifyWorkList @ [n]
 
         procedure Simplify()
             let n = hd (simplifyWorkList)                               
                 simplifyWorkList = tl( simplifyWorkList )
-                push(n,selectStack)
+                push(selectStack,n)
                 forall m in Adjacent(n)
                     DecrementDegree(m)
                     
@@ -119,9 +135,9 @@ sig
                 degree[m] <- degree[m]-1
                 if d = k then (*ahora tiene grado k-1, permite colorear el grafo*)
                     EnableMoves({m}UAdjacent(m))
-                    spillWorkList <- spillWorkList \ {m}
+                    deleteSet(spillWorkList,m)
                     if MoveRelated(m) then
-                        freezeWorkList <- freezeWorkList U {m}
+                        addSet (freezeWorkList, m)
                     else 
                         simplifyWorkList = simplifyWorkList @ [m]
                         
@@ -142,7 +158,7 @@ sig
                 let (u,v) = (x,y)
             workListMoves <-workListMoves \ {m}
             if (u = v) then
-                coalescedMoves <- coalescedMoves U {m}
+                addSet (coalescedMoves ,m)
                 addWorkList(u)
             else if (v ∈ precolored or (u,v) ∈ adjSet) then
                 constrainedMoves <- constrainedMoves U {m}
@@ -150,7 +166,7 @@ sig
                 addWorkList (v)        
             else if ((u ∈ precolored and (pt t ∈ adjacent(v), OK (t,u))) or (n ∉ precolored and
                 Conservative (Adjacent (u) U Adjacent(v))) then
-                    coalescedMoves <- coalescedMoves U {m}
+                    addSet (coalescedMoves ,m)
                     Combine (u,v)
                     addWorkList (u)
             else
@@ -158,7 +174,7 @@ sig
 
         procedure AddWorkList (u)
             if (u ∉ precolored and (not MoveRelated (u)) and (degree[u] < K)) then
-                freezeWorkList <- freezeWorkList \ {u}
+                deleteSet (freezeWorkList, u)
                 simplifyWorkList = simplifyWorkList @ [u]
                 
         function OK (t,r)
@@ -171,28 +187,28 @@ sig
             return (k < K)
 
         function getAlias(n)
-            if n ∈ coalescedNodes then
+            if pertSet(coalescedNodes,n) then
                 GetAlias (alias[n])
             else n
 
         procedure Combine(u,v)
-            if v ∈ freezeWorklist then
-                freezeWorklist = freezeWorkList \ {u}
+            if pertSet(freezeWorklist,v) then
+                deleteSet (freezeWorkList, u)
             else
-                spillWorklist <- spillWorklist \ {v}
-            coalescedNodes <- coalescedNodes U {v}
+                deleteSet (spillWorklist,v)
+            addSet (coalescedNodes,v)
             alias[v] = u
             nodeMoves[u] = nodeMoves[u] U nodeMoves[v]
             forall t ∈ Adjacent(v)
                 AddEdge (t,u)
                 DecrementDegree(t)
-            if (degree[u] >= k andalso u ∈ freezeWorklist)
-                freezeWorklist = freezeWorklist \ {u}
-                spillWorklist <- spillWorklist U {u}
+            if (degree[u] >= k andalso pertSet(freezeWorklist,u))
+                deleteSet (freezeWorkList, u)
+                addSet (spillWorklist,u)
 
         procedure Freeze()
-            let u ∈ freezeWorklist
-            freezeWorklist \ {u}
+            takeSet (freezeWorkList, u)
+            deleteSet (freezeWorkList, u)
             simplifyWorklist = simplifyWorklist @ [u]
             FreezeMoves (u)
 
@@ -205,38 +221,38 @@ sig
                 activeMoves = activeMoves \ {m}
                 frozenMoves = frozenMoves U {m}
                 if NodeMoves(v) = {} andalso degree[v] < k then
-                    freezeWorklist = freezeWorklist \ {v}
+                    deleteSet (freezeWorkList, v)
                     simplifyWorklist = simplifyWorklist @ [v]
 
 
         procedure SelectSpill ()
-            let m ∈ spillWorklist (* Ver nota!! *)
-            spillWorklist = spillWorklist \ {m}
-            simplifyWorklist = simplifyWorklist U {m}
+            takeSet (spillWorklist, m) (* Ver nota!! *)
+            deleteSet (spillWorklist, m)
+            simplifyWorklist = simplifyWorklist @ [m]
             FreezeMoves(m)
 
         procedure AssignColors()
-            while SelectStack not empty
-                let n = pop(SelectStack)
+            while hayElem(SelectStack)
+                pop(SelectStack,n)
                 okColors = {0, .. , k-1}
                 forall w ∈ adjList[n]
-                    if GetAlias(w) ∈ (coloredNodes U precolores) then
+                    if pertSet( union (coloredNodes, precolored), GetAlias(w)) then
                         okColors = okColors \ {color[GetAlias(w)]}
                 if okColors = {}
-                    spilledNodes = spilledNodes U {n}
+                    addSet (spilledNodes,n)
                 else
-                    coloredNodes = coloredNodes U {n}
+                    addSe (coloredNodes,n)
                     let c ∈ okColors
                     color[n] = c
-            forall n ∈ coalescedNodes
-                color[n] = color[GetAlias(n)]
+			map colorearCoalesced (listItems (!coalescedNodes))
+
 
         procedure RewriteProgram()
             (* HACER Algoritmo de Marian *)
-            spilledNodes = {}
-            initial = coloredNodes U coalescedNodes U newTemps
-            coloredNodes = {}
-            coalescedNodes = {}
+            vaciar (spilledNodes)
+            initial = union (!coloredNodes, (union (!coalescedNodes, !newTemps)))
+            vaciar (coloredNodes)
+            vaciar (coalescedNodes) 
 
         in Main()
 
