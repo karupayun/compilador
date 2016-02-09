@@ -83,7 +83,6 @@ fun addEdge u v =
             addDict(degree,v,(getDegree v)+1) )
         else () )  
     else ()
-   
 
 fun build() = List.app (fn i => let val live = ref (addList (empty tigertemp.cmpt,(liveOut i)))
                                     val ismoveI = Splaymap.find(ismove ,i)
@@ -173,9 +172,44 @@ fun freezeMoves u = app (fn m => let val (x,y) = (src m,dst m)
 fun freeze() = let val u = takeSet(freezeWorklist)
                  in deleteSet(freezeWorklist,u); addSet(simplifyWorklist,u); freezeMoves u end
 
-(*TODO: SelectSpill, RewriteProgram, ver spill!! *)
+fun spillCost n = 0 (* TODO *) (* Esta función debería pasarse como argumento según el sig, aunque se podría calcular acá mismo. *)
+(* SpillCost:
+Sacado de internet:
+Spilling:
+What should we spill?
+– Something that will eliminate a lot of interference edges
+– Something that is used infrequently
+– Maybe something that is live across a lot of calls?
+•
+Giving up too quickly
+One Heuristic:
+– spill cheapest live range (aka “web”)
+– Cost = [(# defs & uses)*10 loop-nest-depth ]/degree
 
-                                              	
+Pablo: Por simplicidad se podría usar algo que minimize los usos/def y/o maximize el grado.
+
+* Selectspill va a elegir el spill del mínimo costo.
+
+)*
+
+*)
+
+fun selectSpill () = let val m = foldl (fn (i,ac) => (if spillCost(i) < spillCost(ac) then i else ac)) (takeSet (spillWorklist)) (!spillWorklist)
+					 in deleteSet (spillWorklist, m); addSet(simplifyWorklist,m); freezeMoves m end
+
+
+fun spillear () = ref (empty tigertemp.cmpt) (* TODO *) (* HACER Algoritmo de Marian para spillear nodos de SpilledNodes. 
+							- Allocar memoria para cada nodo de SpilledNodes
+							- Crear nuevo temporario vi para cada definición y cada uso
+							- Insertar un "store" antes de cada definicion y un "carga" antes de cada uso.
+							- Poner todos los vi en un conjunto de "nuevos temporarios"		
+							- Devolver esos temporarios*)
+
+fun rewriteProgram () = let val newTemps = spillear()
+						in vaciar (spilledNodes,tigertemp.cmpt); initial := union (!coloredNodes, (union (!coalescedNodes, !newTemps))); vaciar (coloredNodes,tigertemp.cmpt); vaciar (coalescedNodes,tigertemp.cmpt)  end
+
+fun main () = () (* TODO *)
+              	
 fun assignColor() = let fun colorea n = let val okColors = ref (empty Int.compare) (*TODO lista de 0 a k-1*)
                                         in app (fn w => if member(union(!coloredNodes, precolored), getAlias w) then deleteSet(okColors, getDict(color,getAlias w, k+1)) else () ) (getDict(adjList,n,empty cmpt)) ;
                                            if not (hayElem okColors) then addSet(spilledNodes,n) else (addSet(coloredNodes,n); addDict (color,n, takeSet okColors))
