@@ -1,259 +1,185 @@
-signature tigercolor = 
-sig
-	structure frame : tigerframe.frame
-
-	type allocation = (tigertemp.temp, tigerframe.register) Splaymap.dict (* Cada temp a su registro *)
+structure tigercolor :> tigercolor =
+struct
     
-	val color: {interferencia:  Liveness.igraph,
-				initial: allocation,
-				spillCost: tigergraph.node -> int,
-				registers: frame.register list) -> allocation * tigertemp.temp list
-(*
-    interferencia = fst (interferenceGraph (makeGraph ..bla bla))
-    initial = []
-    spillCost x = 1
-    registers = [rax,...,] tigerframe.registers*)
+    open tigerframe
+    open Splayset
+    open tigertemp
 
-       val precolored = addList ((empty String.compare), r)
-       val k = numItems precolored
+  	type allocation = (tigertemp.temp, tigerframe.register) Splaymap.dict (* Cada temp a su registro *)
+
+
+    val precolored = addList ((empty tigertemp.cmpt), []) (*TODO [] tigerframe*)
+    val k = numItems precolored
 
 	fun addSet (s,e) = s := add (!s,e)
 	fun hayElem s = not(isEmpty(!s))
 	fun deleteSet (s,e) = if member(!s,e) then s:= delete (!s,e) else ()
 	fun pertSet (s,e) = member(!s,e)
-	fun takeSet (s,e) = e := hd(listItems(!s))
-	fun vaciar (s) = s := empty  
-	fun toSet s = addList  (empty,!s) 
+    fun takeSet s = hd(listItems(!s))    
+	fun takeSetP (s,e) = e := hd(listItems(!s))
+	fun vaciar (s,cmp) = s := empty cmp  
+	fun toSet (s,cmp) = addList  (empty cmp,!s) 
+
+    fun isEmptyStack p = case !p of 
+                        [] => true
+                        | _ => false
 
 	fun push (p,e) = p := (!p @ [e])
-	fun pop (p,e) = (e := hd(!p) ; p := tail(!p))
-
-	fun colorearCoalesced n = color[n] := color[GetAlias(n)]
-	
-
-  fun color {interferencia = g, initial = i, spillCost = s, registers = r } = let
-
- (*ref*)val initial = 
-
-        val map (g.gtemp) (g.graph.nodes) (*Ver como hacer esto *)
-
-        val simplifyWorklist = ref []
-        val freezeWorklist = ref (empty String.compare)
-        val spillWorklist = ref (empty String.compare)
+    fun pop p = let val e = case !p of 
+                             [] => raise Fail ("error pop")
+                            | (x::xs) => (p:= xs; x)
+                    in e end 
+	fun popP (p,e) = (e := hd(!p) ; p := tl(!p))
 
 
-        val spilledNodes = ref (empty String.compare)
-        val coalescedNodes = ref (empty String.compare)
-        val coloredNodes = ref (empty String.compare)
-        val selectStack = ref []
+    val simplifyWorklist = ref (empty tigertemp.cmpt ) 
+    val freezeWorklist = ref (empty tigertemp.cmpt)
+    val spillWorklist = ref (empty tigertemp.cmpt)
+
+    val spilledNodes = ref (empty tigertemp.cmpt)
+    val coalescedNodes = ref (empty tigertemp.cmpt)
+    val coloredNodes = ref (empty tigertemp.cmpt)
+    val selectStack = ref ([] : (tigertemp.temp list))
+
+    val coalescedMoves = ref (empty tigergraph.cmp) 
+    val constrainedMoves = ref (empty tigergraph.cmp)
+    val frozenMoves = ref (empty tigergraph.cmp)
+    val worklistMoves = ref (empty tigergraph.cmp)
+    val activeMoves = ref (empty tigergraph.cmp)
+
+    fun cmpTT ((t1,t2),(t1',t2')) = case tigertemp.cmpt(t1,t1') of
+                                      EQUAL => tigertemp.cmpt(t2,t2')
+                                    | c => c
 
 
-        val coalescedMoves = ref (empty String.compare)
-        val contrainedMoves = 
-        val frozenMoves = 
-        val worklistMoves = 
-        val activeMoves = 
+    val adjSet = ref (empty cmpTT)
+    val adjList = ref (Splaymap.mkDict tigertemp.cmpt) 
+    val degree = ref (Splaymap.mkDict tigertemp.cmpt)
+    val moveList = ref (Splaymap.mkDict tigertemp.cmpt)
+    val alias = ref (Splaymap.mkDict tigertemp.cmpt)
+    val color = ref (Splaymap.mkDict tigertemp.cmpt)
 
+    val initial = ref (empty tigertemp.cmpt)
     
-        val adjSet = 
-        val adjList = 
-        val degree = 
-        val moveList = 
-        val alias = 
-        val color = 
-        
+    val (fgraph as tigerflow.FGRAPH{ismove,def,use,...},nodos) = tigerflow.makeGraph [] (*TODO instr list: arg*)
+    val (igraph,liveOut) = tigerliveness.interferenceGraph fgraph
 
-        procedure Main()
-            LivenessAnalysis()
-            Build()
-            MakeWorkList()
-            repeat
-                if not(null(!simplifyWorklist)) then Simplify()
-                else if workListMoves <> {} then Coalesce()
-                else if hayElem(freezeWorkList) then Freeze() 
-                else if hayElem(spillWorkList) then SelectSpill()
-            until not(null(!simplifyWorklist)} andalso workListMove = {} 
-                  andalso hayElem(!freezeWorkList) andalso hayElem(spillWorkList)
-            AssignColors()
-            if hayElem(spilledNodes) then 
-                RewriteProgram(spillesNodes)
-                Main()
-
-        procedure Build():
-            forall b en ( blocks in program(function) )
-                let live = liveOut(b)
-                forall I en ( instrucciones(b) in reverse )
-                    if isMoveInstruction(I) then  
-                        live = live \ use(I)
-                        forall n en (def(I) U use(I))
-                            moveList[n] <- moveList[n] U {I} 
-                         moveListMoves <- workListMoves U {I}
-                    live <- live U def(I)
-                    forall d en def(I)
-                        forall l en live
-                            AddEdge(l,d)
-                    live <- use(I) U (live\def(I))   
-            
-        
-        procedure AddEdge(u,v):
-            if ((u,v) no esta en adjSet) and (u <> v) then
-                adjSet <- adjSet U {(u,v), (v,u)}
-                if u no esta en precolored then
-                    adjList[u] <- adjList[u] U {v}
-                    degree[u] <- degree[u] + 1 
-                if v no esta en precolored then
-                    adjList[v] <- adjList[v] U {u}
-                    degree[v] <- degree[v] + 1   
-
-        function Adjacent(n) = difference ( adjList[n] , addList(!selectStack , !coalescedNodes))        
-
-        function NodeMoves(u)
-            moveList[n] interseccion (activeMoves U workListMoves)
-            
-        function moveRelated(n)
-            NodeMoves <> {}
-            
-        procedure MakeWorkList()
-            forall n en initial
-                initial <- initial \{n}
-                if degree[n] >= k then (*k es la cantidad de colores*)
-                    addSet (spillWorkList, n)
-                else if moveRelated[n] then 
-                        addSet (freezeWorkList, n)
-                    else 
-                        simplifyWorkList = simplifyWorkList @ [n]
-
-        procedure Simplify()
-            let n = hd (simplifyWorkList)                               
-                simplifyWorkList = tl( simplifyWorkList )
-                push(selectStack,n)
-                forall m in Adjacent(n)
-                    DecrementDegree(m)
+fun getDict(d,k,v) =  Option.getOpt (Splaymap.peek(!d,k),v)
+fun getDegree k = getDict(degree,k,0)
                     
-        procedure DecrementDegree(m)
-            let d = degree[m]
-                degree[m] <- degree[m]-1
-                if d = k then (*ahora tiene grado k-1, permite colorear el grafo*)
-                    EnableMoves({m}UAdjacent(m))
-                    deleteSet(spillWorkList,m)
-                    if MoveRelated(m) then
-                        addSet (freezeWorkList, m)
-                    else 
-                        simplifyWorkList = simplifyWorkList @ [m]
-                        
-        procedure EnableMoves(nodes)
-            forall n en nodes
-                forall m en NodeMoves(n)
-                    if m en actualMoves then
-                        activeMoves <- activeMoves \ {m}
-                        workListMoves <- workListMoves U {m} 
+fun addDict(d,k,v) = d := Splaymap.insert(!d,k,v) 
+(*fun modifDict(d,f) = d:= Splaymap.map(f,!d)*)
 
-         procedure Coalesce ()
-            let m(=copy(x,y)) ∈ workListMoves
-            x <- GetAlias(x)
-            y <- GetAlias(y)
-            if y ∈ precolored then
-                let (u,v) = (y,x)
-            else
-                let (u,v) = (x,y)
-            workListMoves <-workListMoves \ {m}
-            if (u = v) then
-                addSet (coalescedMoves ,m)
-                addWorkList(u)
-            else if (v ∈ precolored or (u,v) ∈ adjSet) then
-                constrainedMoves <- constrainedMoves U {m}
-                addWorkList (u)
-                addWorkList (v)        
-            else if ((u ∈ precolored and (pt t ∈ adjacent(v), OK (t,u))) or (n ∉ precolored and
-                Conservative (Adjacent (u) U Adjacent(v))) then
-                    addSet (coalescedMoves ,m)
-                    Combine (u,v)
-                    addWorkList (u)
-            else
-                activeMoves <- activeMoves U {m}
+fun addEdge u v = 
+    if not(pertSet(adjSet, (u,v))) andalso (u<>v) then (
+        addSet(adjSet, (u,v)); 
+        addSet(adjSet, (v,u)); 
+        if not(member(precolored,u)) then (  
+            addDict(adjList,u, add(getDict(adjList,u,empty tigertemp.cmpt), v) );
+            addDict(degree,u,(getDegree u)+1) ) 
+        else ();  
+        if not(member(precolored,v)) then (
+            addDict(adjList,v, add(getDict(adjList,v,empty tigertemp.cmpt),u) );
+            addDict(degree,v,(getDegree v)+1) )
+        else () )  
+    else ()
+   
 
-        procedure AddWorkList (u)
-            if (u ∉ precolored and (not MoveRelated (u)) and (degree[u] < K)) then
-                deleteSet (freezeWorkList, u)
-                simplifyWorkList = simplifyWorkList @ [u]
-                
-        function OK (t,r)
-            degree[t] < K or t ∈ precolored or (t,r) ∈ adjSet
-            
-        function Conservative(nodes)
-            let k = 0
-            forall n ∈ nodes
-                if degree[u] >= K then k <- k+1      
-            return (k < K)
+fun build() = List.app (fn i => let val live = ref (addList (empty tigertemp.cmpt,(liveOut i)))
+                                    val ismoveI = Splaymap.find(ismove ,i)
+                                    val useI = addList (empty tigertemp.cmpt, Splaymap.find(use,i) )
+                                    val defI = addList (empty tigertemp.cmpt,Splaymap.find(def,i)  )      
+                                in if ismoveI then
+                                    (live := difference(!live, useI);
+                                    app (fn n => addDict(moveList,n, add(getDict(moveList,n,empty tigergraph.cmp),i))) (union(useI,defI)) ;
+                                    addSet(worklistMoves,i) ) else ();
+                                    live := union(!live,defI);
+                                    app (fn d => app (fn l => addEdge l d) (!live) ) defI;
+                                    live := union(useI,difference(!live,defI)) end ) (rev nodos)
+                                                            
+                                
+fun nodeMoves n = intersection(getDict(moveList,n,empty tigergraph.cmp), union(!activeMoves, !worklistMoves)) 
 
-        function getAlias(n)
-            if pertSet(coalescedNodes,n) then
-                GetAlias (alias[n])
-            else n
+fun moveRelated n = not( isEmpty(nodeMoves n)) 
 
-        procedure Combine(u,v)
-            if pertSet(freezeWorklist,v) then
-                deleteSet (freezeWorkList, u)
-            else
-                deleteSet (spillWorklist,v)
-            addSet (coalescedNodes,v)
-            alias[v] = u
-            nodeMoves[u] = nodeMoves[u] U nodeMoves[v]
-            forall t ∈ Adjacent(v)
-                AddEdge (t,u)
-                DecrementDegree(t)
-            if (degree[u] >= k andalso pertSet(freezeWorklist,u))
-                deleteSet (freezeWorkList, u)
-                addSet (spillWorklist,u)
+fun makeWorkList() = ( app (fn n => if (getDegree n) >= k then addSet(spillWorklist,n) else if (moveRelated n) then addSet(freezeWorklist,n) else addSet(simplifyWorklist,n)  ) (!initial); vaciar(initial, tigertemp.cmpt) )
+    
 
-        procedure Freeze()
-            takeSet (freezeWorkList, u)
-            deleteSet (freezeWorkList, u)
-            simplifyWorklist = simplifyWorklist @ [u]
-            FreezeMoves (u)
+fun adjacent n = difference(getDict(adjList,n,empty tigertemp.cmpt), union(toSet(selectStack,tigertemp.cmpt), !coalescedNodes))
 
-        procedure FreezeMoves (u)
-            forall (m??=(copy(x,y)) ∈ NoveMoves(u))
-                if GetAlias(y) = GetAlias(u) then
-                    v = GetAlias(x)
-                else
-                    V = GetAlias (y)
-                activeMoves = activeMoves \ {m}
-                frozenMoves = frozenMoves U {m}
-                if NodeMoves(v) = {} andalso degree[v] < k then
-                    deleteSet (freezeWorkList, v)
-                    simplifyWorklist = simplifyWorklist @ [v]
+fun enableMoves nodes = let fun aux m = if pertSet(activeMoves,m) then (deleteSet(activeMoves,m); addSet(worklistMoves,m)) else ()
+                        in app (fn n => app (aux) (nodeMoves n)) nodes end
+
+fun decrementDegree n = let val d = getDegree n
+                        in  addDict(degree, n, d-1 );
+                            if d = k then (
+                                enableMoves (add(adjacent n, n));
+                                deleteSet(spillWorklist,n);
+                                if (moveRelated n) then addSet(freezeWorklist, n) else addSet(simplifyWorklist,n) )
+                            else () end
+                         
+fun simplify() = let val n = takeSet(simplifyWorklist)
+               in deleteSet(simplifyWorklist,n);
+                  push(selectStack, n);
+                  app (decrementDegree) (adjacent n) end
 
 
-        procedure SelectSpill ()
-            takeSet (spillWorklist, m) (* Ver nota!! *)
-            deleteSet (spillWorklist, m)
-            simplifyWorklist = simplifyWorklist @ [m]
-            FreezeMoves(m)
+fun addWorkList u = if not(member(precolored,u)) andalso not(moveRelated u) andalso (getDegree u) < k then (deleteSet(freezeWorklist,u); addSet(simplifyWorklist,u) )else ()
 
-        procedure AssignColors()
-            while hayElem(SelectStack)
-                pop(SelectStack,n)
-                okColors = {0, .. , k-1}
-                forall w ∈ adjList[n]
-                    if pertSet( union (coloredNodes, precolored), GetAlias(w)) then
-                        okColors = okColors \ {color[GetAlias(w)]}
-                if okColors = {}
-                    addSet (spilledNodes,n)
-                else
-                    addSe (coloredNodes,n)
-                    let c ∈ okColors
-                    color[n] = c
-			map colorearCoalesced (listItems (!coalescedNodes))
+fun ok(t,r) = (getDegree t) < k orelse member(precolored,t) orelse pertSet(adjSet,(t,r)) (*George*)
 
+fun conservative nodes = (foldl (fn (n,b) => if ( (getDegree n) >= k) then b+1 else b)  0 nodes) < k (*Briggs*)
+                                
+fun getAlias n = if pertSet(coalescedNodes,n) then getAlias(Splaymap.find(!alias,n)) else n
 
-        procedure RewriteProgram()
-            (* HACER Algoritmo de Marian *)
-            vaciar (spilledNodes)
-            initial = union (!coloredNodes, (union (!coalescedNodes, !newTemps)))
-            vaciar (coloredNodes)
-            vaciar (coalescedNodes) 
+fun combine (u,v) =( if pertSet(freezeWorklist,v) then deleteSet(freezeWorklist,v) else deleteSet(spillWorklist,v); 
+                     addSet(coalescedNodes,v);
+                     addDict(alias,v,u);
+(*cambie nodeMoves(func) por moveList(dict)-- ver pag 259!!*)                     addDict(moveList,u, union(getDict(moveList,u,empty tigergraph.cmp),getDict(moveList,v,empty tigergraph.cmp)));
+                     app (fn t => (addEdge t u; decrementDegree t)) (adjacent v);
+                    if (getDegree u) >= k andalso pertSet(freezeWorklist,u) then (deleteSet(freezeWorklist,u);addSet(spillWorklist,u) ) else () )
 
-        in Main()
+ 
+fun src m = hd (Splaymap.find(use,m) )
 
+fun dst m = hd ( Splaymap.find(def,m) )
+
+fun coalesce() = let val m = takeSet(worklistMoves)
+                     val (x,y) = (getAlias (src m), getAlias (dst m)) 
+                     val (u,v) = if member(precolored, y) then (y,x) else (x,y)
+                   in deleteSet(worklistMoves, m);
+                       if (u = v) then
+                          (addSet(coalescedMoves,m); 
+                          addWorkList u) 
+                       else if member(precolored,v) orelse pertSet(adjSet,(u,v)) then 
+                               (addSet(constrainedMoves,m); 
+                               addWorkList u;
+                               addWorkList v) 
+                       else if (member(precolored,u) andalso (foldl (fn (t,b) => b andalso ok(t,u)) true  (adjacent v) )) orelse (not(member(precolored,u)) andalso conservative (union ( adjacent u,adjacent v ))) then 
+                                (addSet(coalescedMoves,m); 
+                                combine(u,v); 
+                                addWorkList u)
+                       else addSet(activeMoves, m) end
+                            
+fun freezeMoves u = app (fn m => let val (x,y) = (src m,dst m) 
+                                     val v = if (getAlias y = getAlias u) then getAlias x else getAlias y
+                                     in deleteSet(activeMoves,m);
+                                        addSet(frozenMoves,m);
+                                        if isEmpty(nodeMoves v) andalso getDegree v < k then 
+                                           ( deleteSet(freezeWorklist,v);
+                                            addSet(simplifyWorklist,v) )
+                                        else () end ) (nodeMoves u)
+
+fun freeze() = let val u = takeSet(freezeWorklist)
+                 in deleteSet(freezeWorklist,u); addSet(simplifyWorklist,u); freezeMoves u end
+
+(*TODO: SelectSpill, RewriteProgram, ver spill!! *)
+
+                                              	
+fun assignColor() = let fun colorea n = let val okColors = ref (empty Int.compare) (*TODO lista de 0 a k-1*)
+                                        in app (fn w => if member(union(!coloredNodes, precolored), getAlias w) then deleteSet(okColors, getDict(color,getAlias w, k+1)) else () ) (getDict(adjList,n,empty cmpt)) ;
+                                           if not (hayElem okColors) then addSet(spilledNodes,n) else (addSet(coloredNodes,n); addDict (color,n, takeSet okColors))
+                                        end
+                        fun repeat () = if not(isEmptyStack selectStack) then (colorea (pop selectStack); repeat ()) else ()
+                        in repeat(); app (fn n => addDict(color,n,getDict(color,getAlias n, 0)) ) (!coalescedNodes) end
 end

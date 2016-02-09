@@ -35,7 +35,6 @@ a
 
     (*MakeGraph va a venir acá para no hacer un modulo unitario *)
 
-fun fst (x,_) = x
 
 fun makeGraph lInstr = 
    let val gc = newGraph()
@@ -55,19 +54,19 @@ fun makeGraph lInstr =
 
 	       fun mkgr [] d u im = FGRAPH {control = gc, def = d, use = u, ismove = im}
              | mkgr ((n,OPER{src,dst, jump,...})::xs) d u im = let 
-													val d' = Splaymap.insert(d,n,src)(*d @ [(n,src)]*)
-                                                    val u' = Splaymap.insert(d,n,dst)(*u @ [(n, dst)]*)
-                                                    val im' = Splaymap.insert(im,n,false)(*im @ [(n, false)]*) 
+													val d' = Splaymap.insert(d,n,dst) (*aca estaba Splaymap.insert(d,n,src) *)
+                                                    val u' = Splaymap.insert(u,n,src) (* y aca Splaymap.insert(d,n,dst) *)
+                                                    val im' = Splaymap.insert(im,n,false) 
                                                     val _ = case jump of
-										                NONE => if (null xs) then () else mk_edge{from = n, to = fst (List.hd xs)} 
+										                NONE => if (null xs) then () else mk_edge{from = n, to = #1 (List.hd xs)} 
                                                       | SOME lj => List.app (fn j => mk_edge{from = n, to = tabSaca(j,tablab)}) lj          
                                              in mkgr xs d' u' im' end
-              | mkgr ( (n,MOVE{src,dst, ...})::xs) d u im = let val d' = Splaymap.insert(d,n,[src])(*d @ [(n,[src])]*)
-                                                                val u' = Splaymap.insert(d,n,[dst])(*u @ [(n, [dst])]*)
-                                                                val im' = Splaymap.insert(im,n,true)(*im @ [(n, true)]*)        
-                                                             val _ = if (null xs) then () else mk_edge{from = n, to = fst (List.hd xs)} 
+              | mkgr ( (n,MOVE{src,dst, ...})::xs) d u im = let val d' = Splaymap.insert(d,n,[dst]) (*aca lo mismo*)
+                                                                val u' = Splaymap.insert(u,n,[src])
+                                                                val im' = Splaymap.insert(im,n,true)        
+                                                             val _ = if (null xs) then () else mk_edge{from = n, to = #1 (List.hd xs)} 
                                                        in mkgr xs d' u' im' end
               | mkgr _ _ _ _ = raise Fail ("error mkgr!") (*los nodos del grafo de control corresponde a instr OPER o MOVE*)
-            in (mkgr tabnode  (Splaymap.mkDict cmp) (Splaymap.mkDict cmp) (Splaymap.mkDict cmp)(*[] [] []*), List.map (fst) tabnode) end
+            in (mkgr tabnode  (Splaymap.mkDict cmp) (Splaymap.mkDict cmp) (Splaymap.mkDict cmp), List.map (#1) tabnode) end
 end
 
