@@ -40,6 +40,8 @@ struct
     val coalescedNodes = ref (empty tigertemp.cmpt)
     val coloredNodes = ref (empty tigertemp.cmpt)
     val selectStack = ref ([] : (tigertemp.temp list))
+	
+
 
     val coalescedMoves = ref (empty tigergraph.cmp) 
     val constrainedMoves = ref (empty tigergraph.cmp)
@@ -55,6 +57,7 @@ struct
     val adjSet = ref (empty cmpTT)
     val adjList = ref (Splaymap.mkDict tigertemp.cmpt) 
     val degree = ref (Splaymap.mkDict tigertemp.cmpt)
+    val spillCost = ref (Splaymap.mkDict tigertemp.cmpt)
     val moveList = ref (Splaymap.mkDict tigertemp.cmpt)
     val alias = ref (Splaymap.mkDict tigertemp.cmpt)
     val color = ref (Splaymap.mkDict tigertemp.cmpt)
@@ -90,8 +93,12 @@ fun addEdge u v =
 fun build() = let val tigerflow.FGRAPH{ismove,use,def,...} = (#1 (!fg_nodos))
                in List.app (fn i => let val live = ref (addList (empty tigertemp.cmpt,((#2 (!ig_liveOut)) i)))
                                     val ismoveI = Splaymap.find(ismove ,i)
-                                    val useI = addList (empty tigertemp.cmpt, Splaymap.find(use ,i) )
-                                    val defI = addList (empty tigertemp.cmpt,Splaymap.find(def,i)  )      
+                                    val useL = Splaymap.find(use,i)
+                                    val defL = Splaymap.find(def,i)
+                                    val useI = addList (empty tigertemp.cmpt, useL )
+                                    val defI = addList (empty tigertemp.cmpt, defL) )   
+                                    List.app (fn i => addDict (spillCost, i, getDict(spillCost, i, 0))) (useL)
+                                    List.app (fn i => addDict (spillCost, i, getDict(spillCost, i, 0))) (defL)
                                 in if ismoveI then
                                     (live := difference(!live, useI);
                                     app (fn n => addDict(moveList,n, add(getDict(moveList,n,empty tigergraph.cmp),i))) (union(useI,defI)) ;
@@ -176,7 +183,7 @@ fun freezeMoves u = app (fn m => let val (x,y) = (src m,dst m)
 fun freeze() = let val u = takeSet(freezeWorklist)
                  in deleteSet(freezeWorklist,u); addSet(simplifyWorklist,u); freezeMoves u end
 
-fun spillCost n = 0 (* TODO *) (* Esta función debería pasarse como argumento según el sig, aunque se podría calcular acá mismo. Me parece que la idea es calcular en reg_alloc y pasarselo a color pero aca ya tenemos todo junto.*)
+fun spillCost n = getDict (spillCost,n,0) (* TODO *) (* Esta función debería pasarse como argumento según el sig, aunque se podría calcular acá mismo. Me parece que la idea es calcular en reg_alloc y pasarselo a color pero aca ya tenemos todo junto.*)
 
 (* SpillCost:
 Sacado de internet:

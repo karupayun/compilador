@@ -1,6 +1,6 @@
 signature tigerflow = 
 sig
-    type instr
+    (*type instr*)
     type temp
 
     datatype flowgraph = FGRAPH of {control: tigergraph.graph,
@@ -8,5 +8,5 @@ sig
 				                    use: (tigergraph.node, tigertemp.temp list) Splaymap.dict,
 				                    ismove: (tigergraph.node, bool) Splaymap.dict}
 
-    val makeGraph: instr list -> flowgraph * tigergraph.node list
+    val makeGraph: tigerassem.instr list -> flowgraph * tigergraph.node list
 end
