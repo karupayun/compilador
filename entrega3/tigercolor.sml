@@ -19,7 +19,7 @@ struct
 	fun takeSetP (s,e) = e := hd(listItems(!s))
 	fun vaciar (s,cmp) = s := empty cmp  
 	fun toSet (s,cmp) = addList  (empty cmp,!s) 
-
+    fun toList s = listItems (!s)
     fun isEmptyStack p = case !p of 
                         [] => true
                         | _ => false
@@ -61,8 +61,11 @@ struct
 
     val initial = ref (empty tigertemp.cmpt)
     
-    val (fgraph as tigerflow.FGRAPH{ismove,def,use,...},nodos) = tigerflow.makeGraph [] (*TODO instr list: arg*)
-    val (igraph,liveOut) = tigerliveness.interferenceGraph fgraph
+    val lInstr = ref []  (*TODO: arg de alloc*)
+    val fg_nodos = ref (tigerflow.makeGraph [] (*(!lInstr)*) ) 
+    val ig_liveOut = ref (tigerliveness.interferenceGraph (#1 (!fg_nodos)))
+
+    val frame = tigerframe.newFrame{name = "name", formals = []} (*TODO arg de alloc*)
 
 fun getDict(d,k,v) =  Option.getOpt (Splaymap.peek(!d,k),v)
 fun getDegree k = getDict(degree,k,0)
@@ -84,9 +87,10 @@ fun addEdge u v =
         else () )  
     else ()
 
-fun build() = List.app (fn i => let val live = ref (addList (empty tigertemp.cmpt,(liveOut i)))
+fun build() = let val tigerflow.FGRAPH{ismove,use,def,...} = (#1 (!fg_nodos))
+               in List.app (fn i => let val live = ref (addList (empty tigertemp.cmpt,((#2 (!ig_liveOut)) i)))
                                     val ismoveI = Splaymap.find(ismove ,i)
-                                    val useI = addList (empty tigertemp.cmpt, Splaymap.find(use,i) )
+                                    val useI = addList (empty tigertemp.cmpt, Splaymap.find(use ,i) )
                                     val defI = addList (empty tigertemp.cmpt,Splaymap.find(def,i)  )      
                                 in if ismoveI then
                                     (live := difference(!live, useI);
@@ -94,8 +98,8 @@ fun build() = List.app (fn i => let val live = ref (addList (empty tigertemp.cmp
                                     addSet(worklistMoves,i) ) else ();
                                     live := union(!live,defI);
                                     app (fn d => app (fn l => addEdge l d) (!live) ) defI;
-                                    live := union(useI,difference(!live,defI)) end ) (rev nodos)
-                                                            
+                                    live := union(useI,difference(!live,defI)) end ) (rev (#2 (!fg_nodos)))
+                end                                            
                                 
 fun nodeMoves n = intersection(getDict(moveList,n,empty tigergraph.cmp), union(!activeMoves, !worklistMoves)) 
 
@@ -139,9 +143,9 @@ fun combine (u,v) =( if pertSet(freezeWorklist,v) then deleteSet(freezeWorklist,
                     if (getDegree u) >= k andalso pertSet(freezeWorklist,u) then (deleteSet(freezeWorklist,u);addSet(spillWorklist,u) ) else () )
 
  
-fun src m = hd (Splaymap.find(use,m) )
+fun src m = let val tigerflow.FGRAPH{use,...} = (#1 (!fg_nodos)) in hd (Splaymap.find(use,m) ) end
 
-fun dst m = hd ( Splaymap.find(def,m) )
+fun dst m = let val tigerflow.FGRAPH{def,...} = (#1 (!fg_nodos)) in hd ( Splaymap.find(def,m) ) end
 
 fun coalesce() = let val m = takeSet(worklistMoves)
                      val (x,y) = (getAlias (src m), getAlias (dst m)) 
@@ -172,7 +176,8 @@ fun freezeMoves u = app (fn m => let val (x,y) = (src m,dst m)
 fun freeze() = let val u = takeSet(freezeWorklist)
                  in deleteSet(freezeWorklist,u); addSet(simplifyWorklist,u); freezeMoves u end
 
-fun spillCost n = 0 (* TODO *) (* Esta función debería pasarse como argumento según el sig, aunque se podría calcular acá mismo. *)
+fun spillCost n = 0 (* TODO *) (* Esta función debería pasarse como argumento según el sig, aunque se podría calcular acá mismo. Me parece que la idea es calcular en reg_alloc y pasarselo a color pero aca ya tenemos todo junto.*)
+
 (* SpillCost:
 Sacado de internet:
 Spilling:
@@ -187,7 +192,7 @@ One Heuristic:
 – Cost = [(# defs & uses)*10 loop-nest-depth ]/degree
 
 Pablo: Por simplicidad se podría usar algo que minimize los usos/def y/o maximize el grado.
-
+Marga: seria dejar solo [(# defs & uses)]/degree
 * Selectspill va a elegir el spill del mínimo costo.
 
 )*
@@ -198,22 +203,31 @@ fun selectSpill () = let val m = foldl (fn (i,ac) => (if spillCost(i) < spillCos
 					 in deleteSet (spillWorklist, m); addSet(simplifyWorklist,m); freezeMoves m end
 
 
-fun spillear () = ref (empty tigertemp.cmpt) (* TODO *) (* HACER Algoritmo de Marian para spillear nodos de SpilledNodes. 
-							- Allocar memoria para cada nodo de SpilledNodes
-							- Crear nuevo temporario vi para cada definición y cada uso
-							- Insertar un "store" antes de cada definicion y un "carga" antes de cada uso.
-							- Poner todos los vi en un conjunto de "nuevos temporarios"		
-							- Devolver esos temporarios*)
+fun spillear () = let val (lInstr', tlist) = tigerspill.spill (toList spilledNodes) frame (!lInstr) 
+                    in lInstr := lInstr' ; addList(empty tigertemp.cmpt, tlist) end
 
 fun rewriteProgram () = let val newTemps = spillear()
-						in vaciar (spilledNodes,tigertemp.cmpt); initial := union (!coloredNodes, (union (!coalescedNodes, !newTemps))); vaciar (coloredNodes,tigertemp.cmpt); vaciar (coalescedNodes,tigertemp.cmpt)  end
-
-fun main () = () (* TODO *)
+						in vaciar (spilledNodes,tigertemp.cmpt); initial := union (!coloredNodes, (union (!coalescedNodes, newTemps))); vaciar (coloredNodes,tigertemp.cmpt); vaciar (coalescedNodes,tigertemp.cmpt)  end
               	
-fun assignColor() = let fun colorea n = let val okColors = ref (empty Int.compare) (*TODO lista de 0 a k-1*)
+fun assignColors() = let fun colorea n = let val okColors = ref (addList(empty Int.compare, List.tabulate(k, fn n =>n)) ) 
                                         in app (fn w => if member(union(!coloredNodes, precolored), getAlias w) then deleteSet(okColors, getDict(color,getAlias w, k+1)) else () ) (getDict(adjList,n,empty cmpt)) ;
                                            if not (hayElem okColors) then addSet(spilledNodes,n) else (addSet(coloredNodes,n); addDict (color,n, takeSet okColors))
                                         end
                         fun repeat () = if not(isEmptyStack selectStack) then (colorea (pop selectStack); repeat ()) else ()
                         in repeat(); app (fn n => addDict(color,n,getDict(color,getAlias n, 0)) ) (!coalescedNodes) end
+
+fun livenessAnalysis() =( fg_nodos := tigerflow.makeGraph (!lInstr) ; ig_liveOut := tigerliveness.interferenceGraph (#1 (!fg_nodos)) )
+
+fun main () = let fun repeat() = if hayElem(simplifyWorklist) then (simplify(); repeat())
+                                 else if hayElem(worklistMoves) then (coalesce(); repeat())
+                                 else if hayElem(freezeWorklist) then (freeze(); repeat())
+                                 else if hayElem(spillWorklist) then (selectSpill();repeat()) else ()
+              in livenessAnalysis();
+                 build();
+                 makeWorkList();
+                 repeat();      
+                 assignColors();
+                 if hayElem(spilledNodes) then (rewriteProgram() ; main() ) else () end  
+
+
 end
