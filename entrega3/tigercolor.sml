@@ -4,11 +4,10 @@ struct
     open tigerframe
     open Splayset
     open tigertemp
-
   	type allocation = (tigertemp.temp, tigerframe.register) Splaymap.dict (* Cada temp a su registro *)
 
 
-    val precolored = addList ((empty tigertemp.cmpt), []) (*TODO [] tigerframe*)
+    val precolored = addList ((empty tigertemp.cmpt), tigerframe.coloredregisters) 
     val k = numItems precolored
 
 	fun addSet (s,e) = s := add (!s,e)
@@ -57,16 +56,23 @@ struct
     val adjSet = ref (empty cmpTT)
     val adjList = ref (Splaymap.mkDict tigertemp.cmpt) 
     val degree = ref (Splaymap.mkDict tigertemp.cmpt)
-    val spillCost = ref (Splaymap.mkDict tigertemp.cmpt)
+    val countUsesDefs = ref (Splaymap.mkDict tigertemp.cmpt)
     val moveList = ref (Splaymap.mkDict tigertemp.cmpt)
     val alias = ref (Splaymap.mkDict tigertemp.cmpt)
     val color = ref (Splaymap.mkDict tigertemp.cmpt)
 
-    val initial = ref (empty tigertemp.cmpt)
+ 
     
     val lInstr = ref []  (*TODO: arg de alloc*)
-    val fg_nodos = ref (tigerflow.makeGraph [] (*(!lInstr)*) ) 
+    val fg_nodos = ref (tigerflow.makeGraph (!lInstr) (* Le dejo eso para calcular initial *)
     val ig_liveOut = ref (tigerliveness.interferenceGraph (#1 (!fg_nodos)))
+
+    val initial = let val tigerliveness.IGRAPH{graph,gtemp,...} = (#1 (!ig_liveOut))
+                        in ref (addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))) end (*DUDA: Llene esto, porque me parecía que era cualca que esté vacío. Quizá hay una forma más fácil. Cualquier cosa avisen.*)
+    
+
+
+
 
     val frame = tigerframe.newFrame{name = "name", formals = []} (*TODO arg de alloc*)
 
@@ -96,24 +102,23 @@ fun build() = let val tigerflow.FGRAPH{ismove,use,def,...} = (#1 (!fg_nodos))
                                     val useL = Splaymap.find(use,i)
                                     val defL = Splaymap.find(def,i)
                                     val useI = addList (empty tigertemp.cmpt, useL )
-                                    val defI = addList (empty tigertemp.cmpt, defL) )   
-                                    List.app (fn i => addDict (spillCost, i, getDict(spillCost, i, 0))) (useL)
-                                    List.app (fn i => addDict (spillCost, i, getDict(spillCost, i, 0))) (defL)
+                                    val defI = addList (empty tigertemp.cmpt, defL )   
                                 in if ismoveI then
                                     (live := difference(!live, useI);
                                     app (fn n => addDict(moveList,n, add(getDict(moveList,n,empty tigergraph.cmp),i))) (union(useI,defI)) ;
                                     addSet(worklistMoves,i) ) else ();
+                                    List.app (fn i => addDict (countUsesDefs, i, getDict(countUsesDefs, i, 0) + 1)) (useL);
+                                    List.app (fn i => addDict (countUsesDefs, i, getDict(countUsesDefs, i, 0) + 1)) (defL);
                                     live := union(!live,defI);
                                     app (fn d => app (fn l => addEdge l d) (!live) ) defI;
                                     live := union(useI,difference(!live,defI)) end ) (rev (#2 (!fg_nodos)))
                 end                                            
-                                
+
 fun nodeMoves n = intersection(getDict(moveList,n,empty tigergraph.cmp), union(!activeMoves, !worklistMoves)) 
 
 fun moveRelated n = not( isEmpty(nodeMoves n)) 
 
 fun makeWorkList() = ( app (fn n => if (getDegree n) >= k then addSet(spillWorklist,n) else if (moveRelated n) then addSet(freezeWorklist,n) else addSet(simplifyWorklist,n)  ) (!initial); vaciar(initial, tigertemp.cmpt) )
-    
 
 fun adjacent n = difference(getDict(adjList,n,empty tigertemp.cmpt), union(toSet(selectStack,tigertemp.cmpt), !coalescedNodes))
 
@@ -145,7 +150,7 @@ fun getAlias n = if pertSet(coalescedNodes,n) then getAlias(Splaymap.find(!alias
 fun combine (u,v) =( if pertSet(freezeWorklist,v) then deleteSet(freezeWorklist,v) else deleteSet(spillWorklist,v); 
                      addSet(coalescedNodes,v);
                      addDict(alias,v,u);
-(*cambie nodeMoves(func) por moveList(dict)-- ver pag 259!!*)                     addDict(moveList,u, union(getDict(moveList,u,empty tigergraph.cmp),getDict(moveList,v,empty tigergraph.cmp)));
+(*cambie nodeMoves(func) por moveList(dict)-- ver pag 259!! Que hay en la pag 259?? Pablo*)                     addDict(moveList,u, union(getDict(moveList,u,empty tigergraph.cmp),getDict(moveList,v,empty tigergraph.cmp)));
                      app (fn t => (addEdge t u; decrementDegree t)) (adjacent v);
                     if (getDegree u) >= k andalso pertSet(freezeWorklist,u) then (deleteSet(freezeWorklist,u);addSet(spillWorklist,u) ) else () )
 
@@ -183,27 +188,13 @@ fun freezeMoves u = app (fn m => let val (x,y) = (src m,dst m)
 fun freeze() = let val u = takeSet(freezeWorklist)
                  in deleteSet(freezeWorklist,u); addSet(simplifyWorklist,u); freezeMoves u end
 
-fun spillCost n = getDict (spillCost,n,0) (* TODO *) (* Esta función debería pasarse como argumento según el sig, aunque se podría calcular acá mismo. Me parece que la idea es calcular en reg_alloc y pasarselo a color pero aca ya tenemos todo junto.*)
-
+fun spillCost n = Real.fromInt (getDict (countUsesDefs,n,0)) / Real.fromInt (getDegree n) 
 (* SpillCost:
-Sacado de internet:
-Spilling:
-What should we spill?
-– Something that will eliminate a lot of interference edges
-– Something that is used infrequently
-– Maybe something that is live across a lot of calls?
-•
-Giving up too quickly
 One Heuristic:
-– spill cheapest live range (aka “web”)
 – Cost = [(# defs & uses)*10 loop-nest-depth ]/degree
 
 Pablo: Por simplicidad se podría usar algo que minimize los usos/def y/o maximize el grado.
 Marga: seria dejar solo [(# defs & uses)]/degree
-* Selectspill va a elegir el spill del mínimo costo.
-
-)*
-
 *)
 
 fun selectSpill () = let val m = foldl (fn (i,ac) => (if spillCost(i) < spillCost(ac) then i else ac)) (takeSet (spillWorklist)) (!spillWorklist)

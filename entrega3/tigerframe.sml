@@ -52,6 +52,7 @@ val argregs = ["rdi","rsi","rdx","rcx","r8","r9"] (* registros donde van los pri
 val callersaves = ["rax","rdx","rcx"] (* registros preservador por el invocador *) (* DUDA: que deberia ir aca? mariano, en el libro pg 208 dice que deberia ser disjunto con argregs *)
 val calleesaves = ["rbx","r10","r15"] (* registros preservador por la funcion invocada *)
 val calldefs = callersaves @ [rv]
+val coloredregisters = argregs @ callersaves @ calleesaves (* DUDA: Esto es así, no?  Pablo*)
 
 datatype access = InFrame of int | InReg of tigertemp.temp
 type register = string

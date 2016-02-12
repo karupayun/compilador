@@ -20,6 +20,7 @@ val wSz : int
 val log2WSz : int
 val calldefs : tigertemp.temp list
 val callersaves : tigertemp.temp list
+val coloredregisters : tigertemp.temp list
 val exp : access -> tigertree.exp -> tigertree.exp
 val offset : access -> int
 val externalCall : string * tigertree.exp list -> tigertree.exp
