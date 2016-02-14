@@ -4,10 +4,6 @@ sig
 
 	type allocation = (tigertemp.temp, tigerframe.register) Splaymap.dict (* Cada temp a su registro *)
     
-	(*val color: {interferencia:  Liveness.igraph,
-								initial: allocation,
-								spillCost: tigergraph.node -> int,
-								registers: frame.register list) -> allocation * tigertemp.temp list }
-*)
+	val alloc : tigerassem.instr list * tigerframe.frame -> tigerassem.instr list * allocation
 end
 
