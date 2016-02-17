@@ -8,8 +8,14 @@ struct
 
 fun alloc (instrs, frame_arg) = let
 
+    val _ = print("test1\n")
     val precolored = addList ((empty tigertemp.cmpt), tigerframe.coloredregisters) 
     val k = numItems precolored
+    fun error(s) = raise Fail ("Error -- Find "^": "^s^"\n")
+
+    fun find (s,e) = let val v = Splaymap.peek(s,e)
+                     val _ = if (not (isSome v)) then error("q") else ()
+                       in (valOf v) end
 
 	fun addSet (s,e) = s := add (!s,e)
 	fun hayElem s = not(isEmpty(!s))
@@ -41,7 +47,7 @@ fun alloc (instrs, frame_arg) = let
     val coloredNodes = ref (empty tigertemp.cmpt)
     val selectStack = ref ([] : (tigertemp.temp list))
 	
-
+    val _ = print("test10\n")
 
     val coalescedMoves = ref (empty tigergraph.cmp) 
     val constrainedMoves = ref (empty tigergraph.cmp)
@@ -62,19 +68,21 @@ fun alloc (instrs, frame_arg) = let
     val alias = ref (Splaymap.mkDict tigertemp.cmpt)
     val color = ref (Splaymap.mkDict tigertemp.cmpt)
 
- 
+    val _ = print("test20\n")
     
     val lInstr = ref (instrs)
+    val _ = print("test21\n")
     val fg_nodos = ref (tigerflow.makeGraph (!lInstr)) (* Le dejo eso para calcular initial *)
+    val _ = print("test22\n")    
     val ig_liveOut = ref (tigerliveness.interferenceGraph (#1 (!fg_nodos)))
-
+    val _ = print("test23\n")
     val initial = let val tigerliveness.IGRAPH{graph,gtemp,...} = (#1 (!ig_liveOut))
-                        in ref (addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))) end (*DUDA: Llene esto, porque me parecía que era cualca que esté vacío. Quizá hay una forma más fácil. Cualquier cosa avisen.*)
+                        in print("test24\n");ref (addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))) end (*DUDA: Llene esto, porque me parecía que era cualca que esté vacío. Quizá hay una forma más fácil. Cualquier cosa avisen.*)
     
 
 
 
-
+    val _ = print("test28\n")
     val frame = frame_arg
 
     fun getDict(d,k,v) =  Option.getOpt (Splaymap.peek(!d,k),v)
@@ -99,9 +107,9 @@ fun alloc (instrs, frame_arg) = let
 
     fun build() = let val tigerflow.FGRAPH{ismove,use,def,...} = (#1 (!fg_nodos))
                    in List.app (fn i => let val live = ref (addList (empty tigertemp.cmpt,((#2 (!ig_liveOut)) i)))
-                                        val ismoveI = Splaymap.find(ismove ,i)
-                                        val useL = Splaymap.find(use,i)
-                                        val defL = Splaymap.find(def,i)
+                                        val ismoveI = find(ismove ,i)
+                                        val useL = find(use,i)
+                                        val defL = find(def,i)
                                         val useI = addList (empty tigertemp.cmpt, useL )
                                         val defI = addList (empty tigertemp.cmpt, defL )   
                                     in if ismoveI then
@@ -139,14 +147,14 @@ fun alloc (instrs, frame_arg) = let
                       push(selectStack, n);
                       app (decrementDegree) (adjacent n) end
 
-
+        val _ = print("test30\n")
     fun addWorkList u = if not(member(precolored,u)) andalso not(moveRelated u) andalso (getDegree u) < k then (deleteSet(freezeWorklist,u); addSet(simplifyWorklist,u) )else ()
 
     fun ok(t,r) = (getDegree t) < k orelse member(precolored,t) orelse pertSet(adjSet,(t,r)) (*George*)
 
     fun conservative nodes = (foldl (fn (n,b) => if ( (getDegree n) >= k) then b+1 else b)  0 nodes) < k (*Briggs*)
                                     
-    fun getAlias n = if pertSet(coalescedNodes,n) then getAlias(Splaymap.find(!alias,n)) else n
+    fun getAlias n = if pertSet(coalescedNodes,n) then getAlias(find(!alias,n)) else n
 
     fun combine (u,v) =( if pertSet(freezeWorklist,v) then deleteSet(freezeWorklist,v) else deleteSet(spillWorklist,v); 
                          addSet(coalescedNodes,v);
@@ -156,9 +164,9 @@ fun alloc (instrs, frame_arg) = let
                         if (getDegree u) >= k andalso pertSet(freezeWorklist,u) then (deleteSet(freezeWorklist,u);addSet(spillWorklist,u) ) else () )
 
      
-    fun src m = let val tigerflow.FGRAPH{use,...} = (#1 (!fg_nodos)) in hd (Splaymap.find(use,m) ) end
+    fun src m = let val tigerflow.FGRAPH{use,...} = (#1 (!fg_nodos)) in hd (find(use,m) ) end
 
-    fun dst m = let val tigerflow.FGRAPH{def,...} = (#1 (!fg_nodos)) in hd ( Splaymap.find(def,m) ) end
+    fun dst m = let val tigerflow.FGRAPH{def,...} = (#1 (!fg_nodos)) in hd ( find(def,m) ) end
 
     fun coalesce() = let val m = takeSet(worklistMoves)
                          val (x,y) = (getAlias (src m), getAlias (dst m)) 
@@ -221,7 +229,8 @@ fun alloc (instrs, frame_arg) = let
                                      else if hayElem(worklistMoves) then (coalesce(); repeat())
                                      else if hayElem(freezeWorklist) then (freeze(); repeat())
                                      else if hayElem(spillWorklist) then (selectSpill();repeat()) else ()
-                  in livenessAnalysis();
+                  in print("Maiiiin\n");
+                     livenessAnalysis();
                      build();
                      makeWorkList();
                      repeat();      

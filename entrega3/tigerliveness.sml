@@ -10,6 +10,16 @@ struct
                                  tnode: tigertemp.temp -> node,
                                  gtemp: node -> tigertemp.temp,
                                  moves: (node * node) list}
+fun error(s) = raise Fail ("Error -- Liveness "^": "^s^"\n")
+
+fun find (s,e) = let val v = Splaymap.peek(s,e)
+                 val _ = if (not (isSome v)) then error(nodename e) else ()
+                    in (valOf v) end
+
+fun find2 (s,e) = let val v = Splaymap.peek(s,e)
+                  val _ = if (not (isSome v)) then error("2") else ()
+                     in (valOf v) end
+
 
 fun cc (n,s) = (n, List.map makeString s) 
 
@@ -24,8 +34,8 @@ fun ecIO (FGRAPH {control, use, def, ismove}) = let val d = List.foldl (fn (n,d)
                                         (*eqd se fija si dos diccionarios son iguales. key = node, a = temp set*)
                                          fun eqd d d' = eqordl (Splaymap.listItems d) (Splaymap.listItems d')
                                         (*pag 214 iteracion*)
-                                         fun newIO i out = let val i' = Splaymap.map (fn (n,_) => Splayset.union( difference(Splaymap.find(out,n), listToSetTemp(Splaymap.find( def,n)) ) , listToSetTemp(Splaymap.find(use,n)) ) ) i      
-                                                             val o' = Splaymap.map (fn (n,_) => List.foldl (Splayset.union) ( Splayset.empty cmpt) (List.map (fn (n) => Splaymap.find(i,n) ) (succ n)) ) out 
+                                         fun newIO i out = let val i' = Splaymap.map (fn (n,_) => Splayset.union( difference(find(out,n), listToSetTemp(find( def,n)) ) , listToSetTemp(find(use,n)) ) ) i      
+                                                             val o' = Splaymap.map (fn (n,_) => List.foldl (Splayset.union) ( Splayset.empty cmpt) (List.map (fn (n) => find(i,n) ) (succ n)) ) out 
                                                            in (i',o') end
                                         
                                          (*repeti la iteracion si los valores nuevos son distintos a los de antes*)   
@@ -55,20 +65,20 @@ fun interferenceGraph (gf as FGRAPH {control, use, def, ismove}) = let val gi = 
                                                                                 in (tn'', nt'') end
                                                         fun addEdges a sb tn nt = Splayset.foldl (fn (b,(tn,nt)) => addEdge a b tn nt) (tn,nt) sb
 (*IGNoMove crea los nodos para los temporarios necesarios y agrega las aristas q corresponde (*ver pag 221-222*). IGMove hace lo mismo pero como es un nodo que corresponde a un MOVE se agrega el par (src,dst) a m.*)
-                                                      fun iGMove n tn nt m = let val src = List.hd(Splaymap.find(def,n)) (*en los move las listas def y use tienen un solo elemento*)
-                                                                                   val dst = List.hd(Splaymap.find(use,n))
+                                                      fun iGMove n tn nt m = let val src = List.hd(find(def,n)) (*en los move las listas def y use tienen un solo elemento*)
+                                                                                   val dst = List.hd(find(use,n))
                                                                                    val (an,tn',nt') = newnode' src tn nt    
                                                                                    val (cn, tn'', nt'') = newnode' dst tn' nt'
                                                                                    val m' = (an,cn)::m
-                                                                                   val b = Splaymap.find(out,n)
+                                                                                   val b = find(out,n)
                                                                               in (addEdges src (Splayset.difference(b, (listToSetTemp [dst]))) tn nt,m') end
-                                                        fun iGNoMove n tn nt = let val a = Splaymap.find(def,n)
-                                                                                   val b = Splaymap.find(out,n)
+                                                        fun iGNoMove n tn nt = let val a = find(def,n)
+                                                                                   val b = find(out,n)
                                                                                 in List.foldl (fn (x,(tn,nt)) => addEdges x b tn nt) (tn,nt) a  end
-                                                        fun interferenceGraph' nodos tn nt m = List.foldl (fn (n,((tn,nt),m)) => if (Splaymap.find(ismove,n) ) then iGMove n tn nt m else (iGNoMove n tn nt,m) ) ((tn,nt),m) nodos        
+                                                        fun interferenceGraph' nodos tn nt m = List.foldl (fn (n,((tn,nt),m)) => if (find(ismove,n) ) then iGMove n tn nt m else (iGNoMove n tn nt,m) ) ((tn,nt),m) nodos        
  (*igraph*(tigergraph.node -> tigertemp.temp list)*)
                                                         val ((tn,nt),m) = interferenceGraph' (nodes control) (Splaymap.mkDict cmpt) (Splaymap.mkDict cmp) []  
-         in (IGRAPH {graph = gi, tnode = fn t => Splaymap.find(tn,t), gtemp = fn n => Splaymap.find(nt,n), moves = m},fn n => Splayset.listItems(Splaymap.find(out,n)) )  end
+         in (IGRAPH {graph = gi, tnode = fn t => find2(tn,t), gtemp = fn n => find(nt,n), moves = m},fn n => Splayset.listItems(find(out,n)) )  end
 
 
 end

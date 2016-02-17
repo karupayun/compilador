@@ -39,6 +39,7 @@ fun main(args) =
 		(* val _ = print (tigertrans.Ir(tigertrans.getResult())) *) (* imprime el tree*)
 		val fraglist = tigertrans.getResult() (* fragment list *)
 		val (stringlist,funclist) = canonize fraglist
+
 		(*val _ = tigerinterp.inter inter b c  (* ARREGLAR *)*)
         (* val _ = List.app (fn(stms,frame) => print(tigertrans.Ir( [tigerframe.PROC{body=tigerframe.seq stms,frame=frame}] )) ) funclist (* imprime el resultado del canon *) *)
         (* val _ = List.app ( fn(s,l) => print(tigertemp.makeString l^": "^s^"\n") ) stringlist *)
@@ -46,6 +47,8 @@ fun main(args) =
                                         val instrsEE2 = tigerframe.procEntryExit2(frame,instrs)
                                         val {prolog,epilog,body=instrsEE3} = tigerframe.procEntryExit3(frame,instrsEE2)
                                         val _ = print("TRY\n")
+                                        val _ = tigercolor.alloc(instrsEE3,frame)
+                                        val _ = print("TRY Pablo\n")
                                         val (instrColored, dictAlloc) = tigercolor.alloc(instrsEE3,frame)
                                         val _ = print("END\n")
                                         fun saytemp t = Option.getOpt(Splaymap.peek(dictAlloc,t), t)
@@ -59,6 +62,7 @@ fun main(args) =
         fun printbody instrs = List.foldr (fn(a,b)=>a^"\n"^b) "" (List.map printinstr instrs)
         val _ = List.app ( fn {prolog, body, epilog} => print(prolog ^ (printbody body) ^ epilog) ) afunclistproc *)
         val _ = List.app procFunc funclist
+        val _ = raise Fail ("Error -- Main\n")
 	in
 		print "yes!!\n"
 	end	handle Fail s => print("Fail: "^s^"\n")
