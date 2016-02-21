@@ -58,7 +58,7 @@ fun interferenceGraph (gf as FGRAPH {control, use, def, ismove}) = let val gi = 
                                                                                     | NONE => let val n = newNode gi
                                                                                                   val tn' = Splaymap.insert(tn,t,n)
                                                                                                   val nt' = Splaymap.insert(nt,n,t)
-                                                                                              in (n,tn',nt') end
+                                                                                         in (n,tn',nt') end
                                                         fun addEdge a b tn nt = let val (an, tn',nt') = newnode' a tn nt
                                                                                     val (bn, tn'', nt'') = newnode' b tn' nt'
                                                                                     val _ = mk_edge{from = an, to = bn}
@@ -71,7 +71,7 @@ fun interferenceGraph (gf as FGRAPH {control, use, def, ismove}) = let val gi = 
                                                                                    val (cn, tn'', nt'') = newnode' dst tn' nt'
                                                                                    val m' = (an,cn)::m
                                                                                    val b = find(out,n)
-                                                                              in (addEdges src (Splayset.difference(b, (listToSetTemp [dst]))) tn nt,m') end
+                                                                              in (addEdges src (Splayset.difference(b, (listToSetTemp [dst]))) tn'' nt'',m') end
                                                         fun iGNoMove n tn nt = let val a = find(def,n)
                                                                                    val b = find(out,n)
                                                                                 in List.foldl (fn (x,(tn,nt)) => addEdges x b tn nt) (tn,nt) a  end

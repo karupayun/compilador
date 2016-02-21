@@ -77,7 +77,7 @@ fun alloc (instrs, frame_arg) = let
     val ig_liveOut = ref (tigerliveness.interferenceGraph (#1 (!fg_nodos)))
     val _ = print("test23\n")
     val initial = let val tigerliveness.IGRAPH{graph,gtemp,...} = (#1 (!ig_liveOut))
-                        in print("test24\n");ref (addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))) end (*DUDA: Llene esto, porque me parecía que era cualca que esté vacío. Quizá hay una forma más fácil. Cualquier cosa avisen.*)
+                        in print("test24\n");ref (difference((addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))), precolored)) end (*DUDA: Llene esto, porque me parecía que era cualca que esté vacío. Quizá hay una forma más fácil. Cualquier cosa avisen.*) (*Le reste los precoloreados.. pag 253*)
     
 
 
