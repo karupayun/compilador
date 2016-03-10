@@ -8,7 +8,7 @@ sig
 
     val interferenceGraph : tigerflow.flowgraph -> igraph * (tigergraph.node -> tigertemp.temp list)
 
-(*    val show :(* outstream *) igraph -> unit*)
+    val show : igraph -> unit
 
 end
 

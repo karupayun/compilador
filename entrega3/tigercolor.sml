@@ -4,10 +4,16 @@ struct
     open tigerframe
     open Splayset
     open tigertemp
+    open tigerassem
   	type allocation = (tigertemp.temp, tigerframe.register) Splaymap.dict (* Cada temp a su registro *)
 
 fun alloc (instrs, frame_arg) = let
 
+ (*   fun printTemps t = map (fn x => (" "^x)) t
+    fun printIns (OPER {assem, src, dst, jump}) = print ("OPER "^assem^ printTemps src ^ printTemps dst ^"\n")  
+    |   printIns (LABEL {assem, lab}) = print ("LABEL "^assem^"\n")
+    |   printIns (MOVE {assem, src, dst}) = print ("MOVE "^assem^ src ^" "^ dst^"\n")
+*)
     val _ = print("test1\n")
     val precolored = addList ((empty tigertemp.cmpt), tigerframe.coloredregisters) 
     val k = numItems precolored
@@ -91,7 +97,7 @@ fun alloc (instrs, frame_arg) = let
     fun addDict(d,k,v) = d := Splaymap.insert(!d,k,v) 
     (*fun modifDict(d,f) = d:= Splaymap.map(f,!d)*)
 
-    fun addEdge u v = 
+    fun addEdge u v =
         if not(pertSet(adjSet, (u,v))) andalso (u<>v) then (
             addSet(adjSet, (u,v)); 
             addSet(adjSet, (v,u)); 
@@ -211,7 +217,7 @@ fun alloc (instrs, frame_arg) = let
 
 
     fun spillear () = let val (lInstr', tlist) = tigerspill.spill (toList spilledNodes) frame (!lInstr) 
-                        in lInstr := lInstr' ; addList(empty tigertemp.cmpt, tlist) end
+                        in raise Fail ("Spilleandooo!");lInstr := lInstr' ; addList(empty tigertemp.cmpt, tlist) end
 
     fun rewriteProgram () = let val newTemps = spillear()
 						    in vaciar (spilledNodes,tigertemp.cmpt); initial := union (!coloredNodes, (union (!coalescedNodes, newTemps))); vaciar (coloredNodes,tigertemp.cmpt); vaciar (coalescedNodes,tigertemp.cmpt)  end

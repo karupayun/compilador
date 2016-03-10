@@ -27,9 +27,9 @@ datatype instr = OPER of {assem:string, src:temp list, dst:temp list, jump:label
 	      | MOVE{assem,dst,src} => if ((saytemp dst) = (saytemp src)) then "" else "\t" ^ speak assem [dst] [src] []
     end
 
-  fun assemToString (OPER {assem,dst,src,jump=NONE}) = "OPER: "^assem^" D:["^(String.concatWith "," dst)^"] S:["^(String.concatWith "," src)^"]\n"
-    | assemToString (OPER {assem,dst,src,jump=SOME j}) = "OPER: "^assem^" D:["^(String.concatWith "," dst)^"] S:["^(String.concatWith "," src)^"] J:["^(String.concatWith "," j)^"]\n"
-    | assemToString (MOVE {assem,dst,src}) = "MOVE: "^assem^" D:"^dst^" S:"^src^"\n"
-    | assemToString (LABEL {lab,...}) = "LABEL: "^lab^"\n"
+  fun assemToString (OPER {assem,dst,src,jump=NONE}) = "OPER: "^assem^" D:["^(String.concatWith "," dst)^"] S:["^(String.concatWith "," src)^"]"
+    | assemToString (OPER {assem,dst,src,jump=SOME j}) = "OPER: "^assem^" D:["^(String.concatWith "," dst)^"] S:["^(String.concatWith "," src)^"] J:["^(String.concatWith "," j)^"]"
+    | assemToString (MOVE {assem,dst,src}) = "MOVE: "^assem^" D:"^dst^" S:"^src^""
+    | assemToString (LABEL {lab,...}) = "LABEL: "^lab^""
 
 end

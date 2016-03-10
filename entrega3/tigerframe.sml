@@ -101,7 +101,7 @@ fun procEntryExit3(frame:frame,instrs) = {prolog = #name frame ^": \n"^
                                                    "#prologo:\n"^
                                                    "pushq %rbp\n"^
                                                    "movq %rsp, %rbp\n"^
-                                                   "addq $"^Int.toString (!(#cantLocalsInFrame frame) * wSz) ^"%rsp\n\n",
+                                                   "addq $"^Int.toString (!(#cantLocalsInFrame frame) * wSz) ^", %rsp\n\n",
                                     body = instrs,
                                     epilog = "#epilogo "^(#name frame)^"\n"^
                                              "movq %rbp,%rsp\n"^

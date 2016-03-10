@@ -43,14 +43,15 @@ fun main(args) =
 		(*val _ = tigerinterp.inter inter b c  (* ARREGLAR *)*)
         (* val _ = List.app (fn(stms,frame) => print(tigertrans.Ir( [tigerframe.PROC{body=tigerframe.seq stms,frame=frame}] )) ) funclist (* imprime el resultado del canon *) *)
         (* val _ = List.app ( fn(s,l) => print(tigertemp.makeString l^": "^s^"\n") ) stringlist *)
+
+        val printinstr = tigerassem.format (fn x => x)
+        fun printbody instrs = List.foldr (fn(a,b)=>a^"\n"^b) "" (List.map printinstr instrs)
+
         fun procFunc (stms,frame) = let val instrs = tigercodegen.codegens stms
                                         val instrsEE2 = tigerframe.procEntryExit2(frame,instrs)
                                         val {prolog,epilog,body=instrsEE3} = tigerframe.procEntryExit3(frame,instrsEE2)
-                                        val _ = print("TRY\n")
-                                        val _ = tigercolor.alloc(instrsEE3,frame)
-                                        val _ = print("TRY Pablo\n")
+                                        val _ = print( printbody instrsEE3)
                                         val (instrColored, dictAlloc) = tigercolor.alloc(instrsEE3,frame)
-                                        val _ = print("END\n")
                                         fun saytemp t = Option.getOpt(Splaymap.peek(dictAlloc,t), t)
                                         val strListBody = List.map (tigerassem.format saytemp) instrColored
                                         val strBody = List.foldr (fn(x,e)=>x^"\n"^e) "" strListBody
@@ -58,11 +59,10 @@ fun main(args) =
 
         (* val afunclist = List.map ( fn (stms,frame) => (tigercodegen.codegens stms,frame) ) funclist
         val afunclistproc = List.map ( fn (instrs,frame) =>  tigerframe.procEntryExit3(frame,tigerframe.procEntryExit2(frame,instrs) ) ) afunclist (*OBSOLETO*) *)
-        (* val printinstr = tigerassem.format (fn x => x)
-        fun printbody instrs = List.foldr (fn(a,b)=>a^"\n"^b) "" (List.map printinstr instrs)
+        
+(*
         val _ = List.app ( fn {prolog, body, epilog} => print(prolog ^ (printbody body) ^ epilog) ) afunclistproc *)
         val _ = List.app procFunc funclist
-        val _ = raise Fail ("Error -- Main\n")
 	in
 		print "yes!!\n"
 	end	handle Fail s => print("Fail: "^s^"\n")

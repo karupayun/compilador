@@ -21,6 +21,15 @@ fun find2 (s,e) = let val v = Splaymap.peek(s,e)
                      in (valOf v) end
 
 
+fun printN node gtemp = print (gtemp node^" ")
+
+fun printLN ln gtemp = List.map (fn n => printN n gtemp) ln 
+
+fun show (IGRAPH{graph, tnode, gtemp, moves}) = let val nodes = nodes graph
+                                                  val _ = List.map (fn n => (print "\n"; (printN n gtemp); printLN (succ n) gtemp) )  nodes 
+                                              in () end   
+
+
 fun cc (n,s) = (n, List.map makeString s) 
 
 fun listToSetTemp l = Splayset.addList( Splayset.empty cmpt, l) 
@@ -47,10 +56,10 @@ fun ecIO (FGRAPH {control, use, def, ismove}) = let val d = List.foldl (fn (n,d)
                                     in (repeat d d false) end        
   
 
-fun show ig = () (*TODO*)
 
 fun interferenceGraph (gf as FGRAPH {control, use, def, ismove}) = let val gi = newGraph()
                                                                 val (i,out) = ecIO gf 
+                                                                val _ = print (Int.toString (length (nodes control)))
 
  (*newnode': toma un temporario (t), un diccionario q mapea temporarios a nodos (tn)y otro que mapea nodos a temporarios (nt). si el t es una clave de tn devuelve el nodo q le corresponde si no crea un nuevo nodo y lo agrega a ambos diccionarios*)
                                                         fun newnode' t tn nt = case Splaymap.peek(tn,t) of
@@ -62,6 +71,7 @@ fun interferenceGraph (gf as FGRAPH {control, use, def, ismove}) = let val gi = 
                                                         fun addEdge a b tn nt = let val (an, tn',nt') = newnode' a tn nt
                                                                                     val (bn, tn'', nt'') = newnode' b tn' nt'
                                                                                     val _ = mk_edge{from = an, to = bn}
+                                                                                    val _ = mk_edge{from = bn, to = an}(*TODO*)
                                                                                 in (tn'', nt'') end
                                                         fun addEdges a sb tn nt = Splayset.foldl (fn (b,(tn,nt)) => addEdge a b tn nt) (tn,nt) sb
 (*IGNoMove crea los nodos para los temporarios necesarios y agrega las aristas q corresponde (*ver pag 221-222*). IGMove hace lo mismo pero como es un nodo que corresponde a un MOVE se agrega el par (src,dst) a m.*)
@@ -78,7 +88,8 @@ fun interferenceGraph (gf as FGRAPH {control, use, def, ismove}) = let val gi = 
                                                         fun interferenceGraph' nodos tn nt m = List.foldl (fn (n,((tn,nt),m)) => if (find(ismove,n) ) then iGMove n tn nt m else (iGNoMove n tn nt,m) ) ((tn,nt),m) nodos        
  (*igraph*(tigergraph.node -> tigertemp.temp list)*)
                                                         val ((tn,nt),m) = interferenceGraph' (nodes control) (Splaymap.mkDict cmpt) (Splaymap.mkDict cmp) []  
-         in (IGRAPH {graph = gi, tnode = fn t => find2(tn,t), gtemp = fn n => find(nt,n), moves = m},fn n => Splayset.listItems(find(out,n)) )  end
+    val igra = (IGRAPH {graph = gi, tnode = fn t => find2(tn,t), gtemp = fn n => find(nt,n), moves = m},fn n => Splayset.listItems(find(out,n)) )          
+in show (#1 igra); print "marga"; igra  end
 
 
 end
