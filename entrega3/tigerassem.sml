@@ -8,7 +8,7 @@ type label = tigertemp.label
 datatype instr = OPER of {assem:string, src:temp list, dst:temp list, jump:label list option }
                | LABEL of {assem:string, lab:label}
                | MOVE of {assem:string, src:temp, dst:temp}
-
+  fun toString x = if (x < 0) then ("-"^Int.toString(Int.abs(x))) else Int.toString(x)
   fun format saytemp =
     let 
 	    fun speak assem dst src jmp =

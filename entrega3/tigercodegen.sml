@@ -11,7 +11,6 @@ open tigertemp
 fun codegen stm = (*se aplica a cada funcion*)
     let val ilist = ref ([]:(instr list)) (*lista de instrucciones que va a ir mutando*)
         fun emit x = ilist := x::(!ilist) (*!ilist es equivalente a *ilist en C y ilist := a es equivalente a *ilist = a en C*)
-        fun toString x = if (x < 0) then "-"^Int.toString(Int.abs(x)) else Int.toString(x)
         fun result gen = let val t = tigertemp.newtemp() in (gen t; t) end
         (* val saveregs = List.map (fn x => result (fn nt => (emit(aMOVE{assem = "movq %'s0, %'d0", src=x, dst=nt}) ; nt) ))
         fun recoverregs dst src = List.map (fn (d,s) => emit(aMOVE{assem = "movq %'s0, %'d0", src=s, dst=d}) ) ( ListPair.zip(dst,src) ) *)

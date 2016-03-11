@@ -225,5 +225,7 @@ int main()
 		consts[i].chars[0] = i;
     }
 	*/
-    return _tigermain(0 /* static link!? */ );
+    int a =L0__tigermain_0(0 /* static link!? */ );
+    printf("%d",a);
+    return a;
 }

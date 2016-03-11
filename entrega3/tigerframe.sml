@@ -49,10 +49,10 @@ val localsGap = ~wSz 			(* bytes offset de cada local*)
 val calldefs = [rv]         (* registros que son trasheados por la llamada a funcion *)
 val specialregs = [fp, sp] (* DUDA: para que sirven estos? mariano *)
 val argregs = ["rdi","rsi","rdx","rcx","r8","r9"] (* registros donde van los primeros argumentos segun la convención de llamada *)
-val callersaves = ["rax","rdx","rcx"] (* registros preservador por el invocador *) (* DUDA: que deberia ir aca? mariano, en el libro pg 208 dice que deberia ser disjunto con argregs *)
+val callersaves = ["rax","rdx","rcx"] @ argregs (* registros preservador por el invocador *) (* DUDA: que deberia ir aca? mariano, en el libro pg 208 dice que deberia ser disjunto con argregs *)
 val calleesaves = ["rbx","r10","r15"] (* registros preservador por la funcion invocada *)
 val calldefs = callersaves @ [rv]
-val coloredregisters = argregs @ callersaves @ calleesaves (* DUDA: Esto es así, no?  Pablo*)
+val coloredregisters = callersaves @ calleesaves (* DUDA: Esto es así, no?  Pablo*)
 
 datatype access = InFrame of int | InReg of tigertemp.temp
 type register = string
@@ -95,16 +95,17 @@ fun procEntryExit1 ({argsAcc, ...}: frame,body) =
        val saveregs = List.map MOVE (ListPair.zip(freshtmps,List.map TEMP calleesaves)) (* Instrucciones para salvar en temporarios los callee saves *)
        val restoreregs = List.map MOVE(ListPair.zip(List.map TEMP calleesaves,freshtmps)) (* Restaurar los callee saves *)
        in seq( saveregs @ moveargs @ [body] @ restoreregs ) end
-       
+fun toString x = if (x < 0) then ("-"^Int.toString(Int.abs(x))) else Int.toString(x)      
 fun procEntryExit2(frame:frame,instrs) = instrs @ [tigerassem.OPER{assem="",src=[rv,sp,fp]@calleesaves, dst=[], jump=NONE}]
-fun procEntryExit3(frame:frame,instrs) = {prolog = #name frame ^": \n"^ 
-                                                   "#prologo:\n"^
-                                                   "pushq %rbp\n"^
-                                                   "movq %rsp, %rbp\n"^
-                                                   "addq $"^Int.toString (!(#cantLocalsInFrame frame) * wSz) ^", %rsp\n\n",
+fun procEntryExit3(frame:frame,instrs) = {prolog = ".global " ^ #name frame ^ "\n" ^
+                                                   "\t" ^ #name frame ^ ":\n" ^  
+                                                   "\t#prologo:\n"^
+                                                   "\tpushq %rbp\n"^
+                                                   "\tmovq %rsp, %rbp\n"^
+                                                   "\taddq $"^toString (!(#cantLocalsInFrame frame) * wSz * (~1)) ^", %rsp\n\n",
                                     body = instrs,
-                                    epilog = "#epilogo "^(#name frame)^"\n"^
-                                             "movq %rbp,%rsp\n"^
-                                             "popq %rbp\n"^
-                                             "ret\n\n" }
+                                    epilog = "\t#END "^(#name frame)^"\n"^
+                                             "\tmovq %rbp,%rsp\n"^
+                                             "\tpopq %rbp\n"^
+                                             "\tret\n\n" }
 end

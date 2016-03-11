@@ -171,7 +171,10 @@ fun alloc (instrs, frame_arg) = let
                          addDict(alias,v,u);
     (*cambie nodeMoves(func) por moveList(dict)-- ver pag 259!! Que hay en la pag 259?? Pablo*)                     addDict(moveList,u, union(getDict(moveList,u,empty tigergraph.cmp),getDict(moveList,v,empty tigergraph.cmp)));
                        (*   enableMoves(singleton String.compare v);
-                         *)app (fn t => (addEdge t u; decrementDegree t)) (adjacent v);
+                       *)   
+                            Splayset.app (fn x => print (" "^x))   (adjacent v)
+                            ;print("\n");                            
+                            app (fn t => (addEdge t u; decrementDegree t)) (adjacent v);
                         if (getDegree u) >= k andalso pertSet(freezeWorklist,u) then (deleteSet(freezeWorklist,u);addSet(spillWorklist,u) ) else () )
 
      
@@ -224,7 +227,7 @@ fun alloc (instrs, frame_arg) = let
 
 
     fun spillear () = let val (lInstr', tlist) = tigerspill.spill (toList spilledNodes) frame (!lInstr) 
-                        in raise Fail ("Spilleandooo!");lInstr := lInstr' ; addList(empty tigertemp.cmpt, tlist) end
+                        in (*raise Fail ("Spilleandooo!");*)lInstr := lInstr' ; addList(empty tigertemp.cmpt, tlist) end
 
     fun rewriteProgram () = let val newTemps = spillear()
 						    in vaciar (spilledNodes,tigertemp.cmpt); initial := union (!coloredNodes, (union (!coalescedNodes, newTemps))); vaciar (coloredNodes,tigertemp.cmpt); vaciar (coalescedNodes,tigertemp.cmpt)  end
@@ -232,7 +235,7 @@ fun alloc (instrs, frame_arg) = let
 
     fun assignColors() = let fun colorea n = if member(notcolored,n) then () else let val okColors = ref (addList(empty Int.compare, List.tabulate(k, fn n =>n)) ) 
                                             in app (fn w => if member(union(!coloredNodes, precolored), getAlias w) then deleteSet(okColors, getDict(color,getAlias w, k+1)) else ()) (getDict(adjList,n,empty cmpt)) ;
-    (print ("\n"^n); Splayset.app (fn x => print (" "^Int.toString(x) )) (!okColors); print (" "^(Int.toString(takeSet(okColors)))));
+    (print ("\n"^n) (*Splayset.app (fn x => print (" "^Int.toString(x) )) (!okColors); print (" "^(Int.toString(takeSet(okColors)))) *));
       	
                                                if not (hayElem okColors) then addSet(spilledNodes,n) else (addSet(coloredNodes,n); addDict (color,n, takeSet okColors))
                                             end

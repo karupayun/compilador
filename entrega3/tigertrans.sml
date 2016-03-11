@@ -220,7 +220,8 @@ fun callExp(name, extern,isproc,level:level, params) = (*TODO*)
        val moves = List.map MOVE  (ListPair.zip(tmps,params'))
        val rt = TEMP (newtemp())
 in  
-       Ex ( ESEQ( seq ( moves @ [ EXP(CALL(NAME name,tmps)), MOVE(rt,TEMP tigerframe.rv) ] ), rt) ) 
+       if isproc then Nx (seq (moves@[EXP (CALL (NAME name, tmps))]))
+       else Ex ( ESEQ( seq ( moves @ [ EXP(CALL(NAME name,tmps)), MOVE(rt,TEMP tigerframe.rv) ] ), rt) ) 
 end
 fun letExp ([], body) = Ex (unEx body)
  |  letExp (inits, body) = Ex (ESEQ(seq inits,unEx body))

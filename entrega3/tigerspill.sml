@@ -14,8 +14,8 @@ fun spill spillList frame instrs  = let
     fun peek t = Option.map (fn(x,a)=>tigerframe.offset a) ( List.find ( fn(x,a) => x=t ) spillAlloc )
     
     (* Funciones que generan instrucciones que cargan de un temporario a memoria y viceversa *)
-    fun load t k = emit(OPER{assem = "movq "^(Int.toString k)^"(%'s0), %'d0\n", src=[tigerframe.sp],dst=[t],jump=NONE})
-    fun store t k = emit(OPER{assem = "movq %'s1, "^(Int.toString k)^"(%'s0)\n", src=[tigerframe.sp,t],dst=[],jump=NONE})
+    fun load t k = emit(OPER{assem = "movq "^(toString k)^"(%'s0), %'d0", src=[tigerframe.fp],dst=[t],jump=NONE})
+    fun store t k = emit(OPER{assem = "movq %'s1, "^(toString k)^"(%'s0)", src=[tigerframe.fp,t],dst=[],jump=NONE})
 
     (* El corazon de nuestro algoritmo: como tratamos una instruccion *)
     fun oneinstr (OPER{src,dst,assem,jump}) = let
@@ -34,5 +34,5 @@ fun spill spillList frame instrs  = let
                  | (NONE,SOME k) => store src k
                  | (SOME k1, SOME k2) => let val t = newt() in load t k1 ; store t k2 end )
       | oneinstr (LABEL x) = emit(LABEL x)
-    in List.app oneinstr instrs ; (!ilist,!tlist) end
+    in List.app oneinstr instrs ; (rev(!ilist),!tlist) end
 end
