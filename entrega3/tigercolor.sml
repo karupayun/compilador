@@ -16,6 +16,7 @@ fun alloc (instrs, frame_arg) = let
 *)
     val _ = print("test1\n")
     val precolored = addList ((empty tigertemp.cmpt), tigerframe.coloredregisters) 
+    val notcolored = addList ((empty tigertemp.cmpt), tigerframe.specialregs)
     val k = numItems precolored
     fun error(s) = raise Fail ("Error -- Find "^": "^s^"\n")
 
@@ -83,7 +84,10 @@ fun alloc (instrs, frame_arg) = let
     val ig_liveOut = ref (tigerliveness.interferenceGraph (#1 (!fg_nodos)))
     val _ = print("test23\n")
     val initial = let val tigerliveness.IGRAPH{graph,gtemp,...} = (#1 (!ig_liveOut))
-                        in print("test24\n");ref (difference((addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))), precolored)) end (*DUDA: Llene esto, porque me parecía que era cualca que esté vacío. Quizá hay una forma más fácil. Cualquier cosa avisen.*) (*Le reste los precoloreados.. pag 253*)
+                        in print("test24\n");ref (difference((addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))), union(precolored, notcolored))) end (*DUDA: Llene esto, porque me parecía que era cualca que esté vacío. Quizá hay una forma más fácil. Cualquier cosa avisen.*) (*Le reste los precoloreados.. pag 253*)
+    val _ = print ("initial\n")
+    val _ = Splayset.app (fn x => print(x^" ") ) (!initial)
+    val _ = print ("\n")
     
 
 
@@ -166,7 +170,8 @@ fun alloc (instrs, frame_arg) = let
                          addSet(coalescedNodes,v);
                          addDict(alias,v,u);
     (*cambie nodeMoves(func) por moveList(dict)-- ver pag 259!! Que hay en la pag 259?? Pablo*)                     addDict(moveList,u, union(getDict(moveList,u,empty tigergraph.cmp),getDict(moveList,v,empty tigergraph.cmp)));
-                         app (fn t => (addEdge t u; decrementDegree t)) (adjacent v);
+                       (*   enableMoves(singleton String.compare v);
+                         *)app (fn t => (addEdge t u; decrementDegree t)) (adjacent v);
                         if (getDegree u) >= k andalso pertSet(freezeWorklist,u) then (deleteSet(freezeWorklist,u);addSet(spillWorklist,u) ) else () )
 
      
@@ -179,6 +184,7 @@ fun alloc (instrs, frame_arg) = let
                          val (u,v) = if member(precolored, y) then (y,x) else (x,y)
                        in deleteSet(worklistMoves, m);
                            if (u = v) then
+                           (*   (print ("\nu1  "^u^" "^v^"\n"); *)
                               (addSet(coalescedMoves,m); 
                               addWorkList u) 
                            else if member(precolored,v) orelse pertSet(adjSet,(u,v)) then 
@@ -186,7 +192,8 @@ fun alloc (instrs, frame_arg) = let
                                    addWorkList u;
                                    addWorkList v) 
                            else if (member(precolored,u) andalso (foldl (fn (t,b) => b andalso ok(t,u)) true  (adjacent v) )) orelse (not(member(precolored,u)) andalso conservative (union ( adjacent u,adjacent v ))) then 
-                                    (addSet(coalescedMoves,m); 
+                                    (print ("\nu2  "^u^" "^v^"\n");
+                                    addSet(coalescedMoves,m); 
                                     combine(u,v); 
                                     addWorkList u)
                            else addSet(activeMoves, m) end
@@ -221,13 +228,16 @@ fun alloc (instrs, frame_arg) = let
 
     fun rewriteProgram () = let val newTemps = spillear()
 						    in vaciar (spilledNodes,tigertemp.cmpt); initial := union (!coloredNodes, (union (!coalescedNodes, newTemps))); vaciar (coloredNodes,tigertemp.cmpt); vaciar (coalescedNodes,tigertemp.cmpt)  end
-                  	
-    fun assignColors() = let fun colorea n = let val okColors = ref (addList(empty Int.compare, List.tabulate(k, fn n =>n)) ) 
-                                            in app (fn w => if member(union(!coloredNodes, precolored), getAlias w) then deleteSet(okColors, getDict(color,getAlias w, k+1)) else () ) (getDict(adjList,n,empty cmpt)) ;
+            
+
+    fun assignColors() = let fun colorea n = if member(notcolored,n) then () else let val okColors = ref (addList(empty Int.compare, List.tabulate(k, fn n =>n)) ) 
+                                            in app (fn w => if member(union(!coloredNodes, precolored), getAlias w) then deleteSet(okColors, getDict(color,getAlias w, k+1)) else ()) (getDict(adjList,n,empty cmpt)) ;
+    (print ("\n"^n); Splayset.app (fn x => print (" "^Int.toString(x) )) (!okColors); print (" "^(Int.toString(takeSet(okColors)))));
+      	
                                                if not (hayElem okColors) then addSet(spilledNodes,n) else (addSet(coloredNodes,n); addDict (color,n, takeSet okColors))
                                             end
                             fun repeat () = if not(isEmptyStack selectStack) then (colorea (pop selectStack); repeat ()) else ()
-                            in repeat(); app (fn n => addDict(color,n,getDict(color,getAlias n, 0)) ) (!coalescedNodes) end
+                            in repeat(); app (fn n => addDict(color,n,getDict(color,getAlias n, k-1)) ) (!coalescedNodes) end
 
     fun livenessAnalysis() =( fg_nodos := tigerflow.makeGraph (!lInstr) ; ig_liveOut := tigerliveness.interferenceGraph (#1 (!fg_nodos)) )
 
@@ -235,16 +245,21 @@ fun alloc (instrs, frame_arg) = let
                                      else if hayElem(worklistMoves) then (coalesce(); repeat())
                                      else if hayElem(freezeWorklist) then (freeze(); repeat())
                                      else if hayElem(spillWorklist) then (selectSpill();repeat()) else ()
-                  in print("Maiiiin\n");
+                 in  Splayset.foldl (fn (x,n) => (addDict(color,x,n);n+1)) 0 precolored;
+                     Splayset.foldl (fn (x,n) => (addDict(color,x,n);n+1)) k notcolored;
+                     print("Maiiiin\n");
                      livenessAnalysis();
                      build();
                      makeWorkList();
                      repeat();      
                      assignColors();
+                     let val initial2 = let val tigerliveness.IGRAPH{graph,gtemp,...} = (#1 (!ig_liveOut))
+                        in print("test24\n");ref (difference((addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))), union(precolored, notcolored))) end
+                     in Splayset.app (fn x => print (x^" "^Int.toString (getDict(color,getAlias x, k+10))^"\n")) (!initial2) end;
                      if hayElem(spilledNodes) then (rewriteProgram() ; main() ) else () end  
 
     in main();
-       (!lInstr, Splaymap.map (fn (_,a) => List.nth ((listItems(precolored)), a) ) (!color) )
+       (!lInstr, Splaymap.map (fn (_,a) => List.nth ((listItems(precolored)@listItems(notcolored)), a) ) (!color) )
  end
 
 end

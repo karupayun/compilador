@@ -140,8 +140,8 @@ tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo
 tigermain.uo: tigerseman.ui tigercodegen.ui tigerescap.ui tigergrm.ui \
     tigerframe.ui tigercolor.ui tigercanon.ui tigerassem.uo tigerinterp.uo \
     tigerlex.uo tigertrans.ui tigerpp.uo 
-tigercolor.uo: tigercolor.ui tigergraph.ui tigerframe.ui tigertemp.ui \
-    tigerspill.ui tigerliveness.ui tigerflow.ui 
+tigercolor.uo: tigercolor.ui tigergraph.ui tigerframe.ui tigerassem.uo \
+    tigertemp.ui tigerspill.ui tigerliveness.ui tigerflow.ui 
 tigertemp.uo: tigertemp.ui 
 tigercodegen.uo: tigercodegen.ui tigertree.uo tigerframe.ui tigerassem.uo \
     tigertemp.ui 
