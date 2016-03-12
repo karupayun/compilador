@@ -1,0 +1,7 @@
+/* funcionando correctamente 12/03 */
+let
+    var x : int := 10
+    function f(n : int) = let
+        function g() = f(1)
+    in if n=0 then g() else x:=22 end
+in f(0) ; x end
