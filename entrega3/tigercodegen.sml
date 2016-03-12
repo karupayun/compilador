@@ -36,7 +36,8 @@ fun codegen stm = (*se aplica a cada funcion*)
         |   munchStm (EXP (CALL (NAME lab,args))) = ( emit(OPER{assem="call "^(makeString lab), src=munchArgs(0,args), dst=tigerframe.calldefs, jump=NONE}) ;
                                                     let val spoffset = (List.length args - List.length tigerframe.argregs)*tigerframe.wSz (* vamos a recuperar el sp en caso de haber hecho pushq antes del call*)
                                                     in if spoffset>0 then emit(OPER{assem = "addq $"^(toString spoffset)^", %'d0", src = [tigerframe.sp], dst = [tigerframe.sp], jump = NONE}) else () end )
-        |   munchStm (EXP _) = raise Fail "Creemos que esto no deberia suceder ?\n" (*DUDA: puede suceder esto? mariano *)
+(*        |   munchStm (EXP e) = raise Fail ("Creemos que esto no deberia suceder: \n" ^ tigerit.tree (EXP s)) (*DUDA: puede suceder esto? mariano *) ESTO QUEDO OBSOLETO *)
+        |   munchStm (EXP e) = (munchExp e ; ())
         |   munchStm _ = raise Fail "Casos no cubiertos en tigercodegen.munchStm" 
         and munchExp (CONST i) = result (fn r => emit(OPER{assem = "movq $"^(toString i)^", %'d0", src = [], dst = [r], jump = NONE}))
         |   munchExp (NAME lab) = result (fn r => emit(OPER{assem = "movq $"^(makeString lab)^", %'d0", src = [], dst = [r], jump = NONE})) (* Con Mariano suponemos que esto no puede aparecer pero por si las dudas ... *)

@@ -44,15 +44,21 @@ fun main(args) =
         (* val _ = List.app (fn(stms,frame) => print(tigertrans.Ir( [tigerframe.PROC{body=tigerframe.seq stms,frame=frame}] )) ) funclist (* imprime el resultado del canon *) *)
         (* val _ = List.app ( fn(s,l) => print(tigertemp.makeString l^": "^s^"\n") ) stringlist *)
 
+        (* DEBUG PURPOSE *)
         val printinstr = tigerassem.format (fn x => x)
-        fun printbody instrs = List.foldr (fn(a,b)=>a^"\n"^b) "" (List.map printinstr instrs)
+        val aplanartxt = List.foldr (fn(a,b)=>a^"\n"^b) ""
+        fun printbody instrs = aplanartxt (List.map printinstr instrs)
+
 
 		val outAssem = (TextIO.openOut ("o.s"))
                                          handle _ => raise Fail "Falló al abrir el archivo de salida"
         fun printOut s = TextIO.output(outAssem,s)
 
 
-        fun procFunc (stms,frame) = let val instrs = tigercodegen.codegens stms
+        fun procFunc (stms,frame) = let 
+                                        (*ONLY DEBUG PRINT EACH TREE*)
+                                        (* val _ = print (aplanartxt (List.map tigerit.tree stms)) *)
+                                        val instrs = tigercodegen.codegens stms
                                         val instrsEE2 = tigerframe.procEntryExit2(frame,instrs)
                                         (* val _ = print( printbody instrsEE3) *)
                                         (*Con COLOR *)

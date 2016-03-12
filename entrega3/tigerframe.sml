@@ -85,7 +85,7 @@ fun exp(InFrame k) efp = MEM(BINOP(PLUS, efp, CONST k))
 | exp(InReg l) e = TEMP l
 fun offset(InFrame k) = k
 | offset(InReg l) = raise Fail "Ooops"
-fun externalCall(s, l) = CALL(NAME s, l)
+fun externalCall(s, l) = ESEQ(EXP(CALL(NAME s, l)),TEMP rv)
 
 fun procEntryExit1 ({argsAcc, ...}: frame,body) = 
    let fun aux [] _ = []
