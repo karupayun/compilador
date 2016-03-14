@@ -60,7 +60,7 @@ fun main(args) =
                                         (* val _ = print (aplanartxt (List.map tigerit.tree stms)) *)
                                         val instrs = tigercodegen.codegens stms
                                         val instrsEE2 = tigerframe.procEntryExit2(frame,instrs)
-                                        (* val _ = print( printbody instrsEE3) *)
+                                        (*val _ = print( printbody instrsEE2)*) 
                                         (*Con COLOR *)
                                         val (instrColored, dictAlloc) = tigercolor.alloc(instrsEE2,frame)
                                         fun saytemp t = Option.getOpt(Splaymap.peek(dictAlloc,t), t) 

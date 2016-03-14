@@ -49,8 +49,8 @@ val localsGap = ~wSz 			(* bytes offset de cada local*)
 val calldefs = [rv]         (* registros que son trasheados por la llamada a funcion *)
 val specialregs = [fp, sp] (* DUDA: para que sirven estos? mariano *)
 val argregs = ["rdi","rsi","rdx","rcx","r8","r9"] (* registros donde van los primeros argumentos segun la convención de llamada *)
-val callersaves = ["rax","rdx","rcx","r11","r12","r13","r14"] @ argregs (* registros preservador por el invocador *) (* DUDA: que deberia ir aca? mariano, en el libro pg 208 dice que deberia ser disjunto con argregs *)
-val calleesaves = ["rbx","r10","r15"] (* registros preservador por la funcion invocada *)
+val callersaves = ["rax","rdx","rcx","r10","r11"] @ argregs (* registros preservador por el invocador *) (* DUDA: que deberia ir aca? mariano, en el libro pg 208 dice que deberia ser disjunto con argregs *)
+val calleesaves = ["rbx","r12","r13","r14","r15"] (* registros preservador por la funcion invocada *)
 val calldefs = callersaves @ [rv]
 val coloredregisters = callersaves @ calleesaves (* DUDA: Esto es así, no?  Pablo*)
 

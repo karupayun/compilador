@@ -1,5 +1,6 @@
 /* correct if */
 let
-    var author := "mariano"
-    function fact(n : int):int = if n<=1 then n else n*fact(n-1)
-in fact(5) end
+    function fact(n : int):int = 
+        if n<=1 
+            then 1 else n+fact(n-1)
+in fact(6) end
