@@ -44,25 +44,51 @@ fun main(args) =
         (* val _ = List.app (fn(stms,frame) => print(tigertrans.Ir( [tigerframe.PROC{body=tigerframe.seq stms,frame=frame}] )) ) funclist (* imprime el resultado del canon *) *)
         (* val _ = List.app ( fn(s,l) => print(tigertemp.makeString l^": "^s^"\n") ) stringlist *)
 
+        (* DEBUG PURPOSE *)
         val printinstr = tigerassem.format (fn x => x)
-        fun printbody instrs = List.foldr (fn(a,b)=>a^"\n"^b) "" (List.map printinstr instrs)
+        val aplanartxt = List.foldr (fn(a,b)=>a^"\n"^b) ""
+        fun printbody instrs = aplanartxt (List.map printinstr instrs)
 
-        fun procFunc (stms,frame) = let val instrs = tigercodegen.codegens stms
+
+		val outAssem = (TextIO.openOut ("o.s"))
+                                         handle _ => raise Fail "Falló al abrir el archivo de salida"
+        fun printOut s = TextIO.output(outAssem,s)
+
+
+        fun procFunc (stms,frame) = let 
+                                        (*ONLY DEBUG PRINT EACH TREE*)
+                                        (* val _ = print (aplanartxt (List.map tigerit.tree stms)) *)
+                                        val instrs = tigercodegen.codegens stms
                                         val instrsEE2 = tigerframe.procEntryExit2(frame,instrs)
-                                        val {prolog,epilog,body=instrsEE3} = tigerframe.procEntryExit3(frame,instrsEE2)
-                                        val _ = print( printbody instrsEE3)
-                                        val (instrColored, dictAlloc) = tigercolor.alloc(instrsEE3,frame)
-                                        fun saytemp t = Option.getOpt(Splaymap.peek(dictAlloc,t), t)
-                                        val strListBody = List.map (tigerassem.format saytemp) instrColored
+                                        (* val _ = print( printbody instrsEE3) *)
+                                        (*Con COLOR *)
+                                        val (instrColored, dictAlloc) = tigercolor.alloc(instrsEE2,frame)
+                                        fun saytemp t = Option.getOpt(Splaymap.peek(dictAlloc,t), t) 
+                                        val {prolog,epilog,body=instrsEE3} = tigerframe.procEntryExit3(frame,instrColored)
+                                        (*Sin COLOR *)
+                                        (* val instrColored = instrsEE3
+                                        fun saytemp t = t *)
+                                        val strListBody = List.map (tigerassem.format saytemp) instrsEE3
                                         val strBody = List.foldr (fn(x,e)=>x^"\n"^e) "" strListBody
-                                    in print(prolog ^"\n"^ strBody ^"\n"^ epilog^"\n") end
+                                    in prolog ^"\n"^ strBody ^"\n"^ epilog^"\n" end
 
         (* val afunclist = List.map ( fn (stms,frame) => (tigercodegen.codegens stms,frame) ) funclist
         val afunclistproc = List.map ( fn (instrs,frame) =>  tigerframe.procEntryExit3(frame,tigerframe.procEntryExit2(frame,instrs) ) ) afunclist (*OBSOLETO*) *)
         
 (*
         val _ = List.app ( fn {prolog, body, epilog} => print(prolog ^ (printbody body) ^ epilog) ) afunclistproc *)
-        val _ = List.app procFunc funclist
+       
+
+        val _ = printOut(".file \"o.s\"\n" ^ 
+                         ".data\n")
+        val _ = List.app (fn(lab,st)=> (if lab <> "" then printOut(lab^":\n") else (); printOut("\t.string \""^st^"\"\n"))) stringlist
+        val _ = printOut(".text\n")
+
+
+        val txtsgm = List.map procFunc funclist
+        val _ = List.app (printOut) txtsgm
+        val _ = TextIO.closeOut(outAssem)
+        (* val _ = Process.system("gcc -g runtime.c o.s -o a.out") *)
 	in
 		print "yes!!\n"
 	end	handle Fail s => print("Fail: "^s^"\n")

@@ -329,7 +329,7 @@ and transDec(tenv,venv,el,[]) = (tenv,venv,el)
                | procField _ _ = raise Fail "creo que esto no deberia pasar 22!" (* TEST seguro que eso no pasa? *)
    			val argsTipos = map ( fn(func, nl) => procField (#params func) nl ) lf
             val escapes = map ( fn({params,...}, nl) => (map (! o  (#escape)) params)) lf
-            val labels = map (fn({name,...},nl) => tigertemp.newlabel()^" "^name^" "^(Int.toString(nl))) lf (* Etiquetas para debuguear *) 
+            val labels = map (fn({name,...},nl) => tigertemp.newlabel()^"_"^name^"_"^(Int.toString(nl))) lf (* Etiquetas para debuguear *) 
 		    val levels = map (fn(l,f) => newLevel{parent=topLevel(),name=l ,formals = f }) (ListPair.zip(labels, escapes))	        
             val venv' =  List.foldl (fn((lab,lev,fname,argT,retT),v) => tabRInserta(fname,Func {level=lev, label=lab, formals=argT, result=retT,extern=false},v)   ) venv (zip5 labels levels funcName argsTipos retTipo)       
             

@@ -1,0 +1,7 @@
+/* funcionando correctamente 12/03 */
+let
+    var x : int := 10
+    function f() = let
+        function g() = x:=22
+    in g() end
+in f();x end

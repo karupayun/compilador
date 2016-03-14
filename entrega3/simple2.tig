@@ -1,0 +1,4 @@
+/* correct if */
+let
+    function f(a:int, b:int):int = if a<=1 then a else a+b
+in f(3,4) end
