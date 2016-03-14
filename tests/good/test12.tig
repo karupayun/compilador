@@ -2,6 +2,7 @@
 
 let
 	var a := 0
+    var s := 0
 in 
-	for i :=0 to 100 do (a :=a+1; ()); a
+	for i :=0 to 100 do (s := s+a;a :=a+1;  ()); s
 end

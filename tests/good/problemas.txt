@@ -1,0 +1,5 @@
+
+
+test06.tig  ----> Está bien el error al haber recursión infinita???
+test42.tig  ----> No andan nada de los records, creemos que es porque hay problemas con las funciones de argumentos variables,
+                    y que por eso, el allocRecord no funciona.

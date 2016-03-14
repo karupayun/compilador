@@ -112,7 +112,7 @@ void _checkIndexArray(long *a, long i)
 		exit(-1);
 	}
 }
-long *_allocRecord(long ctos, ...)
+long *_allocRecordTrucha(long ctos, ...)
 {
     int i;
     long *p, *a;
@@ -120,7 +120,19 @@ long *_allocRecord(long ctos, ...)
     p = a = malloc(ctos*sizeof(long));
 	va_start(va, ctos);
     for (i = 0; i < ctos; i ++)
-		*p++ = va_arg(va, long);
+	    *p++ = va_arg(va, long);
+    return a;
+}
+long *_allocRecordBis(long ctos, long prim)
+{
+    int i;
+    long *p, *a;
+//	va_list va;
+    p = a = malloc(ctos*sizeof(long));
+//	va_start(va, ctos);
+    for (i = 0; i < ctos; i ++)
+        *p++ = prim;
+	//	*p++ = va_arg(va, long);
     return a;
 }
 void _checkNil(long* r)

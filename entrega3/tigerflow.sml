@@ -76,8 +76,8 @@ fun makeGraph lInstr =
                                                                 val im' = Splaymap.insert(im,n,true)        
                                                              val _ = if (null xs) then () else mk_edge{from = n, to = #1 (List.hd xs)} 
                                                        in mkgr xs d' u' im' end
-                        else let val dst' = elimSR dst
-                                                    val src' = elimSR src
+                                           else let val dst' = elimSR [dst]
+                                                    val src' = elimSR [src]
 													val d' = Splaymap.insert(d,n,dst') (*aca estaba Splaymap.insert(d,n,src) *)
                                                     val u' = Splaymap.insert(u,n,src') (* y aca Splaymap.insert(d,n,dst) *)
                                                     val im' = Splaymap.insert(im,n,false)

@@ -1,27 +1,46 @@
 /* correct declarations */
 let
   type arrtype1 = array of int
-  type rectype1 = {name : string, address : string, id : int, age : int}
-  type arrtype2 = array of rectype1
-  type rectype2 = {name : string, dates : arrtype1}
-
+  type arrtype2 = array of rectype1    
   type arrtype3 = array of string
+  type rectype1 = {name : string, address : string, id : int, age : int}
+  type rectype2 = {name : string, dates : arrtype1}
+  type rectype5 = {id : int}
+ 
 
-  var arr1 := arrtype1 [10] of 0
-  var arr2 := arrtype2 [5] of
-  	 rectype1 {name="aname", address="somewhere", id=0, age=0}
-  var arr3 : arrtype3 := arrtype3 [100] of ""
 
-  var rec1 := rectype1 {name="Kapoios", address="Kapou", id=02432, age=44}
-  var rec2 := rectype2 {name="Allos", dates=arrtype1 [3] of 1900}
+ var arr1 := arrtype1 [10] of 0
+ var arr2 := arrtype1 [10] of 1
+ var arr3 : arrtype3 := arrtype3 [100] of ""
+ var arr4 : arrtype3 := arrtype3 [100] of "h"
+ /* 
+  	 var arr5 := arrtype2 [5] of rectype1 {name="aname", address="somewhere", id=0, age=0}
+
+    var rec1 := rectype1 {name="Kapoios", address="Kapou", id=02432, age=44}
+    var rec2 := rectype2 {name="Allos", dates=arrtype1 [3] of 1900}
+
+    var rec3 := rectype5 {id=2432}
+
+    var rec4 := rectype5 {id=2432}*/
 in
-  arr1[0] := 1;
-  arr1[9] := 3;
+arr1[0] := 1;
+arr1[9] := 3;
+/*  var rec2 := rectype2 {name="Allos", dates=arrtype1 [3] of 1900}
   arr2[3].name := "kati";
   arr2[1].age := 23;
   arr3[34] := "sfd";
 
   rec1.name := "sdf";
   rec2.dates[0] := 2323;
-  rec2.dates[2] := 2323; 0
+  rec2.dates[2] := 2323;*/
+arr1[0]+arr1[9]+arr1[5]+arr2[7]
+
 end
+
+    
+  
+  
+ 
+
+
+
