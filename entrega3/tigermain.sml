@@ -68,6 +68,12 @@ fun main(args) =
                                         (*Sin COLOR *)
                                         (* val instrColored = instrsEE3
                                         fun saytemp t = t *)
+
+                                        (* ACA SE MUESTRA EL BUG: *)
+                                        val _ = if (tigerframe.name(frame) = "L1_fact_6") then let
+                                                val _ = print("saytemp r14:"^(saytemp "r14")^"<<---OJO!!\n")
+                                                in raise Fail "asdasda" end else ()
+
                                         val strListBody = List.map (tigerassem.format saytemp) instrsEE3
                                         val strBody = List.foldr (fn(x,e)=>x^"\n"^e) "" strListBody
                                     in prolog ^"\n"^ strBody ^"\n"^ epilog^"\n" end
