@@ -112,7 +112,7 @@ void _checkIndexArray(long *a, long i)
 		exit(-1);
 	}
 }
-long *_allocRecordTrucha(long ctos, ...)
+long *_allocRecord(long ctos, ...)
 {
     int i;
     long *p, *a;
@@ -231,13 +231,5 @@ string *getstr()
 int main()
 {
     int i;
-	/*
-    for (i = 0; i < 256; i++) {
-		consts[i].length = 1;
-		consts[i].chars[0] = i;
-    }
-	*/
-    int a =L0__tigermain_0(0 /* static link!? */ );
-    printf("%d",a);
-    return a;
+    return L0__tigermain_0(0 /* static link!? */ );
 }

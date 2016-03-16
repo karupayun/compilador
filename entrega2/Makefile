@@ -1,6 +1,6 @@
 # Unix makefile for tigermain example
 
-LUGAR = DCC
+LUGAR = Mariano
 
 ifeq ($(LUGAR),Facultad)
 # Facultad

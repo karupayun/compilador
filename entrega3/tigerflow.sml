@@ -45,7 +45,7 @@ fun makeGraph lInstr =
             (*mktln crea los nodos del grafo de control y los asocia con la instr correspondiente (tn) y crea una tabla que mapea cada label con el nodo al que corresponde (tl) *)
        val printinstr = tigerassem.format (fn x => x)
        fun printbody instrs = List.foldr (fn(a,b)=>a^"\n"^b) "" (List.map printinstr instrs)
-        val _ = print(printbody lInstr )
+     (*   val _ = print(printbody lInstr )*)
         fun mktln [] tl tn = (tl,tn) 
          | mktln (LABEL{assem, lab}::inss) tl tn = let val (tl', tn') = mktln inss (tabNueva()) []
                                                             val v = case tn' of

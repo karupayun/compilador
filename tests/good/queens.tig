@@ -6,7 +6,7 @@ let
             if n>=10 then (  dprintaux (n / 10) ; (print (chr(48+n-(n/10)*10))) ) else print( chr(48+n) )
         function dprint (n : int) =
             (dprintaux(n);print("\n"))
-    var N := 10
+    var N := 7
 
     type intArray = array of int
 
@@ -24,10 +24,13 @@ let
 	     print ("\n"));
          print ("\n")) )
 
+    function countboards () = c:=c+1
+        
+    
     function try (c : int) =
 ( /*  for i := 0 to c do print ("."); print ("\n"); flush ();*/
-     if c=N
-     then printboard ()
+     if c=N 
+     then printboard() /*countboards()*/
      else for r := 0 to N-1
 	   do if row[r]=0 & diag1[r+c]=0 & diag2[r+N-1-c]=0
 	           then (row[r] :=1; diag1[r+c] :=1; diag2[r+N-1-c] :=1;
@@ -36,5 +39,5 @@ let
 			 row[r] :=0; diag1[r+c] :=0; diag2[r+N-1-c] :=0)
 
 )
- in try (0);dprint(c); 0
+ in try(0);dprint(c); 0
 end

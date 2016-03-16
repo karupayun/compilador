@@ -1,22 +1,30 @@
 let
- type any = {any : int}
- var buffer := getchar ()
+    function dprint (n : int) =
+            if n>=10 then (  dprint (n / 10) ; (print (chr(48+n-(n/10)*10))) ) else print( chr(48+n) )
+ function mygetchar(n : int) : string = 
+    let var x := getchar ()
+    in (dprint(n);print("Lei:");print(x);print("\n");x) end
+/* var buffer := mygetchar (0) */
 
- function readint (any : any) : int =
+
+
+ function readint () : int =
    let var i := 0
+       var buffer := mygetchar (0) 
        function isdigit (s : string) : int =
          ord ("0") <= ord (s) & ord (s) <= ord ("9")
        function skipto () =
-   	 while buffer = " " 
-   	   do buffer := getchar ()
+     ( dprint(buffer = " ");
+   	 while buffer = " " | buffer = "\n"
+   	   do buffer := mygetchar (1) )
    in skipto ();
-      any.any := isdigit (buffer);
       while isdigit (buffer)
    	do (i := i * 10 + ord (buffer) - ord ("0");
-            buffer := getchar ());
+            buffer := mygetchar (2)
+        );
       i
    end
-
+/*
  type list = {first : int, rest : list}
 
  function readlist () : list =
@@ -42,12 +50,13 @@ let
       else if i>0 then f (i)
       else print ("0")
    end
-
  function printlist (l : list) =
    if l = nil then print ("\n")
    else (printint (l.first); print (" "); printlist (l.rest))
 
-   var list1 := readlist ()
-   var list2 := (buffer := getchar (); readlist ())
-in printlist(list1);printlist(list2);printlist (merge (list1,list2)); 0
+   var list1 := list {first = 1, rest = list{first = 3, rest= nil}}
+   var list2 := list {first = 2, rest = list{first = 4, rest= nil}}
+   */ 
+in 
+  readint()
 end

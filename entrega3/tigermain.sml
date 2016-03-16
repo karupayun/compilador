@@ -41,7 +41,7 @@ fun main(args) =
 		val (stringlist,funclist) = canonize fraglist
 
 		(*val _ = tigerinterp.inter inter b c  (* ARREGLAR *)*)
-        (* val _ = List.app (fn(stms,frame) => print(tigertrans.Ir( [tigerframe.PROC{body=tigerframe.seq stms,frame=frame}] )) ) funclist (* imprime el resultado del canon *) *)
+    (*     val _ = List.app (fn(stms,frame) => print(tigertrans.Ir( [tigerframe.PROC{body=tigerframe.seq stms,frame=frame}] )) ) funclist (* imprime el resultado del canon *) *)
         (* val _ = List.app ( fn(s,l) => print(tigertemp.makeString l^": "^s^"\n") ) stringlist *)
 
         (* DEBUG PURPOSE *)
@@ -64,15 +64,14 @@ fun main(args) =
                                         (*Con COLOR *)
                                         val (instrColored, dictAlloc) = tigercolor.alloc(instrsEE2,frame)
                                         fun saytemp t = Option.getOpt(Splaymap.peek(dictAlloc,t), t) 
-                                        val {prolog,epilog,body=instrsEE3} = tigerframe.procEntryExit3(frame,instrColored)
                                         (*Sin COLOR *)
-                                        (* val instrColored = instrsEE3
+                                        (* val instrColored = instrsEE2
                                         fun saytemp t = t *)
-
+                                        val {prolog,epilog,body=instrsEE3} = tigerframe.procEntryExit3(frame,instrColored)
                                         (* ACA SE MUESTRA EL BUG: *)
-                                        val _ = if (tigerframe.name(frame) = "L1_fact_6") then let
+                                     (*   val _ = if (tigerframe.name(frame) = "L1_fact_6") then let
                                                 val _ = print("saytemp r14:"^(saytemp "r14")^"<<---OJO!!\n")
-                                                in raise Fail "asdasda" end else ()
+                                                in raise Fail "asdasda" end else ()*)
 
                                         val strListBody = List.map (tigerassem.format saytemp) instrsEE3
                                         val strBody = List.foldr (fn(x,e)=>x^"\n"^e) "" strListBody
@@ -87,14 +86,14 @@ fun main(args) =
 
         val _ = printOut(".file \"o.s\"\n" ^ 
                          ".data\n")
-        val _ = List.app (fn(lab,st)=> (if lab <> "" then printOut(lab^":\n") else (); printOut("\t.string \""^st^"\"\n"))) stringlist
+        val _ = ( List.app (fn(lab,st)=> (printOut(lab^":\n") ;  printOut("\t.quad "^ tigerassem.toString(String.size(Option.valOf(String.fromCString(st)))) ^"\n") ; printOut("\t.string \""^st^"\"\n"))) stringlist ) handle _ => raise Fail "Something wrong with fromCString\n"
         val _ = printOut(".text\n")
 
 
         val txtsgm = List.map procFunc funclist
         val _ = List.app (printOut) txtsgm
         val _ = TextIO.closeOut(outAssem)
-        (* val _ = Process.system("gcc -g runtime.c o.s -o a.out") *)
+        val _ = Process.system("gcc -g runtime.c o.s -o a.out")
 	in
 		print "yes!!\n"
 	end	handle Fail s => print("Fail: "^s^"\n")

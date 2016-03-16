@@ -1,0 +1,7 @@
+/* define valid mutually recursive procedures */
+let
+
+function sum10 (a : int, b : int,d:int,e:int,f:int,g:int,h:int,i:int,j:int,k:int):int= a+b+d+e+f+g+h+i+j+k
+in
+	sum10(1,2,3,4,5,6,7,8,9,10)
+end

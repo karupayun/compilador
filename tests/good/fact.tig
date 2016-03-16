@@ -7,5 +7,5 @@ let
       then 1
       else n * fact (n - 1)
 in
-  fact (2)
+  fact (10)
 end

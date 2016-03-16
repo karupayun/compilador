@@ -59,8 +59,7 @@ fun ecIO (FGRAPH {control, use, def, ismove}) = let val d = List.foldl (fn (n,d)
 
 fun interferenceGraph (gf as FGRAPH {control, use, def, ismove}) = let val gi = newGraph()
                                                                 val (i,out) = ecIO gf 
-                                                                val _ = print (Int.toString (length (nodes control)))
-
+                                                               
  (*newnode': toma un temporario (t), un diccionario q mapea temporarios a nodos (tn)y otro que mapea nodos a temporarios (nt). si el t es una clave de tn devuelve el nodo q le corresponde si no crea un nuevo nodo y lo agrega a ambos diccionarios*)
                                                         fun newnode' t tn nt = case Splaymap.peek(tn,t) of
                                                                                     SOME n => (n,tn,nt)
@@ -89,7 +88,7 @@ fun interferenceGraph (gf as FGRAPH {control, use, def, ismove}) = let val gi = 
  (*igraph*(tigergraph.node -> tigertemp.temp list)*)
                                                         val ((tn,nt),m) = interferenceGraph' (nodes control) (Splaymap.mkDict cmpt) (Splaymap.mkDict cmp) []  
     val igra = (IGRAPH {graph = gi, tnode = fn t => find2(tn,t), gtemp = fn n => find(nt,n), moves = m},fn n => Splayset.listItems(find(out,n)) )          
-in show (#1 igra); print "marga"; igra  end
+in (*show (#1 igra);*) igra  end
 
 
 end

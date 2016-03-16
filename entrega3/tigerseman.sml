@@ -94,7 +94,7 @@ fun transExp(venv, tenv) =
 		| trexp(UnitExp _) = {exp=unitExp(), ty=TUnit}
 		| trexp(NilExp _)= {exp=nilExp(), ty=TNil}
 		| trexp(IntExp(i, _)) = {exp=intExp i, ty=TInt RW}
-		| trexp(StringExp(s, _)) = {exp= stringExp s, ty=TString}
+		| trexp(StringExp(s, _)) =  {exp= stringExp s, ty=TString}
 		| trexp(CallExp ({func,args},nl)) =
 			let val (targs, tresult, flabel, fexterna,flevel) = 
 				case tabBusca (func, venv) of
@@ -370,7 +370,7 @@ fun transProg ex =
 								result=SOME "int", body=ex}, 0)]],
 						body=UnitExp 0}, 0)
 		val {ty,exp} = transExp(tab_vars, tab_tipos) main
-	in	print "allok\n" end
+	in	() end
 	
 end
 

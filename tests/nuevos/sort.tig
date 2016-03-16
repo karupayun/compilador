@@ -1,0 +1,8 @@
+let
+  type  arrtype = array of int
+  var a : arrtype := arrtype [10] of 10
+  function dprint (n : int) =
+            if n>=10 then (  dprint (n / 10) ; (print (chr(48+n-(n/10)*10))) ) else print( chr(48+n) )
+in
+    a[0]
+end

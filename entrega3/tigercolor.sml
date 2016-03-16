@@ -8,13 +8,6 @@ struct
   	type allocation = (tigertemp.temp, tigerframe.register) Splaymap.dict (* Cada temp a su registro *)
 
 fun alloc (instrs, frame_arg) = let
-
- (*   fun printTemps t = map (fn x => (" "^x)) t
-    fun printIns (OPER {assem, src, dst, jump}) = print ("OPER "^assem^ printTemps src ^ printTemps dst ^"\n")  
-    |   printIns (LABEL {assem, lab}) = print ("LABEL "^assem^"\n")
-    |   printIns (MOVE {assem, src, dst}) = print ("MOVE "^assem^ src ^" "^ dst^"\n")
-*)
-    val _ = print("test1\n")
     val precolored = addList ((empty tigertemp.cmpt), tigerframe.coloredregisters) 
     val notcolored = addList ((empty tigertemp.cmpt), tigerframe.specialregs)
     val k = numItems precolored
@@ -54,8 +47,6 @@ fun alloc (instrs, frame_arg) = let
     val coloredNodes = ref (empty tigertemp.cmpt)
     val selectStack = ref ([] : (tigertemp.temp list))
 	
-    val _ = print("test10\n")
-
     val coalescedMoves = ref (empty tigergraph.cmp) 
     val constrainedMoves = ref (empty tigergraph.cmp)
     val frozenMoves = ref (empty tigergraph.cmp)
@@ -75,28 +66,18 @@ fun alloc (instrs, frame_arg) = let
     val alias = ref (Splaymap.mkDict tigertemp.cmpt)
     val color = ref (Splaymap.mkDict tigertemp.cmpt)
 
-    val _ = print("test20\n")
     
     val lInstr = ref (instrs)
-    val _ = print("test21\n")
     val fg_nodos = ref (tigerflow.makeGraph (!lInstr)) (* Le dejo eso para calcular initial *)
-    val _ = print("test22\n")    
     val ig_liveOut = ref (tigerliveness.interferenceGraph (#1 (!fg_nodos)))
-    val _ = print("test23\n")
     val initial = let val tigerliveness.IGRAPH{graph,gtemp,...} = (#1 (!ig_liveOut))
-                        in print("test24\n");ref (difference((addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))), (*union( *)precolored(*, notcolored)*))) end (*DUDA: Llene esto, porque me parecía que era cualca que esté vacío. Quizá hay una forma más fácil. Cualquier cosa avisen.*) (*Le reste los precoloreados.. pag 253*)
-    val _ = print ("initial\n")
-    val _ = Splayset.app (fn x => print(x^" ") ) (!initial)
-    val _ = print ("\n")
-    
+                        in ref (difference((addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))), (*union( *)precolored(*, notcolored)*))) end (*DUDA: Llene esto, porque me parecía que era cualca que esté vacío. Quizá hay una forma más fácil. Cualquier cosa avisen.*) (*Le reste los precoloreados.. pag 253*)
 
 
-
-    val _ = print("test28\n")
     val frame = frame_arg
 
     fun getDict(d,k,v) =  Option.getOpt (Splaymap.peek(!d,k),v)
-    fun getDegree k = getDict(degree,k,0)
+    fun getDegree n = if member(precolored, n) then k+10 else getDict(degree,n,0)
                         
     fun addDict(d,k,v) = d := Splaymap.insert(!d,k,v) 
     (*fun modifDict(d,f) = d:= Splaymap.map(f,!d)*)
@@ -154,11 +135,9 @@ fun alloc (instrs, frame_arg) = let
                              
     fun simplify() = let val n = takeSet(simplifyWorklist)
                    in deleteSet(simplifyWorklist,n);
-                        print("pusheando "^n);
                       push(selectStack, n);
                       app (decrementDegree) (adjacent n) end
 
-        val _ = print("test30\n")
     fun addWorkList u = if not(member(precolored,u)) andalso not(moveRelated u) andalso (getDegree u) < k then (deleteSet(freezeWorklist,u); addSet(simplifyWorklist,u) )else ()
 
     fun ok(t,r) = (getDegree t) < k orelse member(precolored,t) orelse pertSet(adjSet,(t,r)) (*George*)
@@ -173,8 +152,8 @@ fun alloc (instrs, frame_arg) = let
     (*cambie nodeMoves(func) por moveList(dict)-- ver pag 259!! Que hay en la pag 259?? Pablo*)                     addDict(moveList,u, union(getDict(moveList,u,empty tigergraph.cmp),getDict(moveList,v,empty tigergraph.cmp)));
                        (*   enableMoves(singleton String.compare v);
                        *)   
-                            Splayset.app (fn x => print (" "^x))   (adjacent v)
-                            ;print("\n");                            
+  (* Lista de Adyacencia!!  Splayset.app (fn x => print (" "^x))   (adjacent v)
+                            ;print("\n");                            *)
                             app (fn t => (addEdge t u; decrementDegree t)) (adjacent v);
                         if (getDegree u) >= k andalso pertSet(freezeWorklist,u) then (deleteSet(freezeWorklist,u);addSet(spillWorklist,u) ) else () )
 
@@ -188,7 +167,6 @@ fun alloc (instrs, frame_arg) = let
                          val (u,v) = if member(precolored, y) then (y,x) else (x,y)
                        in deleteSet(worklistMoves, m);
                            if (u = v) then
-                           (*   (print ("\nu1  "^u^" "^v^"\n"); *)
                               (addSet(coalescedMoves,m); 
                               addWorkList u) 
                            else if member(precolored,v) orelse pertSet(adjSet,(u,v)) then 
@@ -196,8 +174,7 @@ fun alloc (instrs, frame_arg) = let
                                    addWorkList u;
                                    addWorkList v) 
                            else if (member(precolored,u) andalso (foldl (fn (t,b) => b andalso ok(t,u)) true  (adjacent v) )) orelse (not(member(precolored,u)) andalso conservative (union ( adjacent u,adjacent v ))) then 
-                                    (print ("\nu2  "^u^" "^v^"\n");
-                                    addSet(coalescedMoves,m); 
+                                    (addSet(coalescedMoves,m); 
                                     combine(u,v); 
                                     addWorkList u)
                            else addSet(activeMoves, m) end
@@ -236,7 +213,7 @@ fun alloc (instrs, frame_arg) = let
 
     fun assignColors() = let fun colorea n = if member(notcolored,n) then raise Fail ("NotColored!!") else let val okColors = ref (addList(empty Int.compare, List.tabulate(k, fn n =>n)) ) 
                                             in app (fn w => if member(union(!coloredNodes, precolored), getAlias w) then deleteSet(okColors, getDict(color,getAlias w, k+1)) else ()) (getDict(adjList,n,empty cmpt)) ;
-    (print ("\n"^n) (*Splayset.app (fn x => print (" "^Int.toString(x) )) (!okColors); print (" "^(Int.toString(takeSet(okColors)))) *));
+   (* (print ("\n"^n) *)(*Splayset.app (fn x => print (" "^Int.toString(x) )) (!okColors); print (" "^(Int.toString(takeSet(okColors)))) );*)
       	
                                                if not (hayElem okColors) then addSet(spilledNodes,n) else (addSet(coloredNodes,n); addDict (color,n, takeSet okColors))
                                             end
@@ -251,15 +228,14 @@ fun alloc (instrs, frame_arg) = let
                                      else if hayElem(spillWorklist) then (selectSpill();repeat()) else ()
                  in  Splayset.foldl (fn (x,n) => (addDict(color,x,n);n+1)) 0 precolored;
                      Splayset.foldl (fn (x,n) => (addDict(color,x,n);n+1)) k notcolored;
-                     print("Maiiiin\n");
                      livenessAnalysis();
                      build();
                      makeWorkList();
                      repeat();      
                      assignColors();
-                     let val initial2 = let val tigerliveness.IGRAPH{graph,gtemp,...} = (#1 (!ig_liveOut))
-                        in print("test24\n");ref (difference((addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))), (*union( *)precolored(*, notcolored)*))) end
-                     in Splayset.app (fn x => print (x^" "^Int.toString (getDict(color,getAlias x, k+10))^"\n")) (!initial2) end;
+                   (*  let val initial2 = let val tigerliveness.IGRAPH{graph,gtemp,...} = (#1 (!ig_liveOut))
+                        in ref (difference((addList (empty tigertemp.cmpt, List.map (gtemp) (tigergraph.nodes graph))), (*union( *)precolored(*, notcolored)*))) end
+                     in Splayset.app (fn x => print (x^" "^Int.toString (getDict(color,getAlias x, k+10))^"\n")) (!initial2) end;*)
                      if hayElem(spilledNodes) then (rewriteProgram() ; main() ) else () end  
 
     in main();

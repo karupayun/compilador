@@ -4,5 +4,6 @@ let
   var rec1 : rectype := rectype {name="Nobody", age=1000}
 in
   rec1.name := "Somebody";
-  rec1; 0
+  rec1; 
+  print(rec1.name);rec1.age
 end

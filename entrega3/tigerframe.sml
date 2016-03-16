@@ -85,11 +85,12 @@ fun exp(InFrame k) efp = MEM(BINOP(PLUS, efp, CONST k))
 | exp(InReg l) e = TEMP l
 fun offset(InFrame k) = k
 | offset(InReg l) = raise Fail "Ooops"
-fun externalCall(s, l) = ESEQ(EXP(CALL(NAME s, l)),TEMP rv)
+fun externalCall(s, l) = let val raux = tigertemp.newtemp() in ESEQ(SEQ(EXP(CALL(NAME s, l)),MOVE(TEMP raux,TEMP rv)),TEMP raux) end
 
-fun procEntryExit1 ({argsAcc, ...}: frame,body) = 
-   let fun aux [] _ = []
-       |   aux (acc::accs) n = MOVE( exp acc (TEMP fp), if n < List.length argregs then TEMP (List.nth(argregs,n)) else MEM(BINOP(PLUS, CONST ((n-List.length argregs)*8+fpPrevLev), TEMP fp)) ) :: aux accs (n+1)
+fun procEntryExit1 ( fr : frame,body) = 
+   let val argsAcc = #argsAcc fr
+       fun aux [] _ = []
+       |   aux (acc::accs) n = MOVE( exp acc (TEMP fp), if n < List.length argregs then TEMP (List.nth(argregs,n)) else MEM(BINOP(PLUS, CONST ((n-List.length argregs)*8+16), TEMP fp)) ) :: aux accs (n+1)
        val moveargs = aux (!argsAcc) 0 (*Instrucciones para mover de los argumentos a los locals donde la función ve internamente las cosas *)
        val freshtmps = List.tabulate (List.length calleesaves , fn _ => TEMP (tigertemp.newtemp()))
        val saveregs = List.map MOVE (ListPair.zip(freshtmps,List.map TEMP calleesaves)) (* Instrucciones para salvar en temporarios los callee saves *)
