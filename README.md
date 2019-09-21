@@ -1,3 +1,3 @@
 # compilador
 
-Página para aprender sobre Gits: https://git-scm.com/book/es/v1
+A tiger compiler made in ML for academic purposes.
